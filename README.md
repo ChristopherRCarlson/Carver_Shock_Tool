@@ -12,4 +12,4 @@ A networked web application developed to manage shock absorber specifications an
     * **Smart Search:** Real-time lookup with E-Commerce integration.
 
 ## Note
-This repository contains the source code for the interface and logic. The proprietary database (`Carver_Shocks_Database.csv`) and server configuration files are excluded for security.
+This repository contains the source code for the interface and logic. The proprietary database and server configuration files are excluded for security.
