@@ -1,13 +1,14 @@
 <?php
-// internal_entry.php - V4.0 (Boss's Schema & Duplicate Check)
+// internal_entry.php - V5.0 (Schema v2.0 & OE Integration)
 
-$csvFile = __DIR__ . '/Carver_Shocks_Database.csv';
+$csvFile = __DIR__ . '/system_files/Carver_Shocks_Database.csv';
 $message = "";
 
 // Helper: Sanitizer
 function clean_input($data) {
     $val = trim($data ?? '');
-    if (preg_match('/^(n\/a|na|n\.a\.|none|null)$/i', $val)) return '';
+    // Added 'na' variants based on cleanup notes.
+    if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) return '';
     return $val;
 }
 
@@ -17,10 +18,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         $partNum = clean_input($_POST['shock_pn']);
 
+        // Updated Array: Now 33 Columns to accommodate Inner/Outer Sleeves.
         $newRow = [
-            clean_input($_POST['shock_kit']),
+            clean_input($_POST['oe_pn']), // Main ID
             $partNum,
-            clean_input($_POST['oe_pn']),
+            clean_input($_POST['shock_kit']),
             clean_input($_POST['description']),
             clean_input($_POST['service_kit']),
             clean_input($_POST['bearing_cap']),
@@ -41,16 +43,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             clean_input($_POST['hose']),
             clean_input($_POST['res_clamp']),
             clean_input($_POST['adjuster_rebound']),
-            // Body Mount
+            // Body Mount (Bifurcated)
             clean_input($_POST['body_bearing']),
             clean_input($_POST['body_oring']),
             clean_input($_POST['body_reducer']),
-            clean_input($_POST['body_sleeve']),
-            // Eyelet Mount
+            clean_input($_POST['body_inner_sleeve']), // NEW
+            clean_input($_POST['body_outer_sleeve']), // NEW
+            // Eyelet Mount (Bifurcated)
             clean_input($_POST['eyelet_bearing']),
             clean_input($_POST['eyelet_oring']),
             clean_input($_POST['eyelet_reducer']),
-            clean_input($_POST['eyelet_sleeve'])
+            clean_input($_POST['eyelet_inner_sleeve']), // NEW
+            clean_input($_POST['eyelet_outer_sleeve']) // NEW
         ];
 
         fputcsv($handle, $newRow);
@@ -61,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
-// Success Message
+// Success Message and Styles remain the same.
 if (isset($_GET['status']) && $_GET['status'] == 'success') {
     $savedItem = htmlspecialchars($_GET['item'] ?? 'Item');
     $message = "<div class='alert success'>SUCCESS: <strong>$savedItem</strong> saved.</div>";
@@ -140,11 +144,11 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
             <div class="grid">
                 <div class="section-header">1. Identification</div>
                 <div class="half">
-                    <label>Shock P/N (Search Key) *</label>
-                    <input type="text" name="shock_pn" required placeholder="e.g. 885-08-508" onblur="checkDuplicate(this)">
+                    <label>OE P/N (Search Key) *</label>
+                    <input type="text" name="oe_pn" required onblur="checkDuplicate(this)">
                 </div>
-                <div class="half"><label>Shock Kit (Optional)</label><input type="text" name="shock_kit"></div>
-                <div class="half"><label>OE P/N</label><input type="text" name="oe_pn"></div>
+                <div class="half"><label>Shock Kit</label><input type="text" name="shock_kit"></div>
+                <div class="half"><label>Shock P/N</label><input type="text" name="shock_pn"></div>
                 <div class="half"><label>Description</label><input type="text" name="description"></div>
 
                 <div class="section-header">2. Core Components</div>
@@ -175,13 +179,37 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
                 <div><label>Bearing</label><input type="text" name="body_bearing"></div>
                 <div><label>O-Ring</label><input type="text" name="body_oring"></div>
                 <div><label>Reducer</label><input type="text" name="body_reducer"></div>
-                <div><label>Sleeve</label><input type="text" name="body_sleeve"></div>
+                
+                <div class="full">
+                    <div class="sleeve-container" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label>Inner Sleeve</label>
+                            <input type="text" name="body_inner_sleeve" placeholder="Inner">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Outer Sleeve</label>
+                            <input type="text" name="body_outer_sleeve" placeholder="Outer">
+                        </div>
+                    </div>
+                </div>
 
                 <div class="section-header">6. Mounting: Eyelet End</div>
                 <div><label>Eyelet</label><input type="text" name="eyelet"></div> <div><label>Bearing</label><input type="text" name="eyelet_bearing"></div>
                 <div><label>O-Ring</label><input type="text" name="eyelet_oring"></div>
                 <div><label>Reducer</label><input type="text" name="eyelet_reducer"></div>
-                <div><label>Sleeve</label><input type="text" name="eyelet_sleeve"></div>
+                
+
+                <div class="full">
+                    <div class="sleeve-container" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label>Inner Sleeve</label>
+                            <input type="text" name="eyelet_inner_sleeve" placeholder="Inner">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Outer Sleeve</label>
+                            <input type="text" name="eyelet_outer_sleeve" placeholder="Outer">
+                        </div>
+                </div>
             </div>
             
             <button type="submit" id="submit-btn">SAVE TO DATABASE</button>

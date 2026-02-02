@@ -1,157 +1,118 @@
 <?php
-// draft_lookup.php - V7.0 (Boss Schema)
-class ShockLookup {
-    public function getResults() {
-        $query = isset($_GET['sku']) ? trim($_GET['sku']) : '';
-        if (empty($query)) return [];
+// draft_lookup.php - Schema v2.0 (OE-First & Split Sleeves)
 
-        $results = [];
-        $csvFile = __DIR__ . '/system_files/Carver_Shocks_Database.csv';
+$csvFile = 'system_files/Carver_Shocks_Database.csv';
 
-        if (($handle = fopen($csvFile, "r")) !== FALSE) {
-            // 31 Columns - Matches Boss's Excel
-            $headers = [
-                'shock_kit','shock_pn','oe_pn','description','service_kit',
-                'bearing_cap','body_cap','body','inner_body','metering_rod',
-                'eyelet','reservoir','shaft','bearing_assembly','base_valve',
-                'live_iqs_tractive','boc','valve_code','res_end_cap','bypass_screws',
-                'hose','res_clamp','adjuster_rebound','body_bearing','body_oring',
-                'body_reducer','body_sleeve','eyelet_bearing','eyelet_oring',
-                'eyelet_reducer','eyelet_sleeve'
-            ];
-            
-            $headerCount = count($headers);
-            
-            while (($data = fgetcsv($handle, 2000, ",")) !== FALSE) {
-                // Pad/Trim Logic
-                $rowLength = count($data);
-                if ($rowLength < $headerCount) $data = array_pad($data, $headerCount, "");
-                else if ($rowLength > $headerCount) $data = array_slice($data, 0, $headerCount);
-                
-                $row = array_combine($headers, $data);
-                if ($row['shock_pn'] == 'shock_pn') continue;
-
-                if (stripos($row['shock_pn'], $query) !== false || 
-                    stripos($row['oe_pn'], $query) !== false || 
-                    stripos($row['description'], $query) !== false) {
-                    $results[] = $row;
-                }
-            }
-            fclose($handle);
-        }
-        return $results;
+// Expanded Sanitizer for Display
+function display_clean($data) {
+    $val = trim($data ?? '');
+    if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) {
+        return '<span class="empty">-</span>';
     }
+    return htmlspecialchars($val);
 }
-$app = new ShockLookup();
-$results = $app->getResults();
 
-function render($sku, $name) {
-    if(empty($sku)) return '';
-    return '<a href="https://www.carverperformance.com/cart.php?target=search&substring='.urlencode($sku).'" target="_blank" class="btn-link">'.$name.': <strong>'.$sku.'</strong></a> ';
+$results = [];
+$search = $_GET['search'] ?? '';
+
+if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
+    $headers = fgetcsv($handle); // Skip header row
+    while (($data = fgetcsv($handle)) !== FALSE) {
+        // Search OE (Index 0), Shock PN (Index 1), or Description (Index 3)
+        if (stripos($data[0], $search) !== FALSE || 
+            stripos($data[1], $search) !== FALSE || 
+            stripos($data[3], $search) !== FALSE) {
+            $results[] = $data;
+        }
+    }
+    fclose($handle);
 }
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Shock Lookup</title>
+    <title>Carver Shock Lookup v2.0</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
-        input[type="text"] { flex-grow: 1; padding: 12px; font-size: 16px; border: 2px solid #ddd; border-radius: 4px; }
-        button { padding: 12px 25px; background: #d9534f; color: white; border: none; font-size: 16px; cursor: pointer; border-radius: 4px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 0.9em; }
-        th { background: #333; color: white; padding: 10px; text-align: left; }
-        td { padding: 12px; border-bottom: 1px solid #ddd; vertical-align: top; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .btn-link { display: inline-block; padding: 2px 6px; background: #eee; color: #333; text-decoration: none; border-radius: 3px; font-size: 0.85em; border: 1px solid #ccc; margin-right: 4px; margin-bottom: 4px; white-space: nowrap; }
-        .btn-link:hover { background: #ddd; }
-        .section-title { font-weight: bold; color: #777; font-size: 0.75em; text-transform: uppercase; margin-bottom: 4px; display: block; border-bottom: 1px dashed #ccc; }
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+        .search-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        input[type="text"] { width: 70%; padding: 10px; font-size: 1.1em; }
+        
+        .result-card { background: white; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border-left: 5px solid #007bff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .result-header { background: #e9ecef; padding: 15px; border-bottom: 1px solid #ddd; }
+        .oe-title { font-size: 1.4em; color: #d9534f; font-weight: bold; }
+        .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; padding: 15px; }
+        
+        .spec-item { border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .spec-label { font-size: 0.8em; color: #666; display: block; text-transform: uppercase; }
+        .spec-value { font-weight: bold; color: #333; }
+        .empty { color: #ccc; font-weight: normal; }
+        
+        .mounting-box { background: #fcf8e3; padding: 10px; grid-column: span 2; border-radius: 4px; border: 1px solid #faebcc; }
+        .sleeve-pair { display: flex; gap: 10px; margin-top: 5px; }
     </style>
 </head>
 <body>
-<div class="container">
-    <h2>Carver Performance Master Lookup</h2>
-    <form method="GET" class="search-box">
-        <input type="text" name="sku" placeholder="Enter Shock P/N, OE P/N, or Description..." value="<?php echo isset($_GET['sku']) ? htmlspecialchars($_GET['sku']) : ''; ?>">
-        <button type="submit">Search</button>
-    </form>
 
-    <?php if (!empty($results)): ?>
-        <table>
-            <thead>
-                <tr>
-                    <th style="width: 25%;">Shock Identity</th>
-                    <th style="width: 25%;">Core Parts</th>
-                    <th style="width: 25%;">Valving & Res</th>
-                    <th style="width: 25%;">Mounting</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($results as $row): ?>
-                    <tr>
-                        <td>
-                            <strong><?php echo htmlspecialchars($row['shock_pn']); ?></strong><br>
-                            <small style="color:#666;"><?php echo htmlspecialchars($row['description']); ?></small><br>
-                            <small>OE: <?php echo htmlspecialchars($row['oe_pn']); ?></small><br>
-                            <small>Kit: <?php echo htmlspecialchars($row['shock_kit']); ?></small><br><br>
-                            <?php if($row['service_kit']) echo '<a href="#" class="btn-link" style="background:#5cb85c; color:white;">Service: '.$row['service_kit'].'</a>'; ?>
-                        </td>
-                        <td>
-                            <span class="section-title">Main Assembly</span>
-                            <?php 
-                            echo render($row['shaft'], 'Shaft');
-                            echo render($row['body'], 'Body');
-                            echo render($row['body_cap'], 'BodyCap');
-                            echo render($row['bearing_cap'], 'BrngCap');
-                            echo render($row['eyelet'], 'Eyelet');
-                            echo render($row['reservoir'], 'Res');
-                            echo render($row['res_end_cap'], 'ResCap');
-                            ?>
-                        </td>
-                        <td>
-                            <span class="section-title">Internals</span>
-                            <?php 
-                            echo render($row['metering_rod'], 'MetRod');
-                            echo render($row['base_valve'], 'BaseVlv');
-                            echo render($row['bearing_assembly'], 'BrngAssy');
-                            echo render($row['boc'], 'BOC');
-                            ?>
-                            <div style="margin-top:8px;">
-                                <span class="section-title">Hardware</span>
-                                <?php 
-                                echo render($row['hose'], 'Hose');
-                                echo render($row['res_clamp'], 'Clamp');
-                                echo render($row['bypass_screws'], 'BypScr');
-                                echo render($row['adjuster_rebound'], 'Adj');
-                                ?>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="section-title">Body End</span>
-                            <?php 
-                            echo render($row['body_bearing'], 'Brng');
-                            echo render($row['body_oring'], 'Org');
-                            echo render($row['body_reducer'], 'Red');
-                            echo render($row['body_sleeve'], 'Slv');
-                            ?>
-                            <div style="margin-top:8px;">
-                                <span class="section-title">Eyelet End</span>
-                                <?php 
-                                echo render($row['eyelet_bearing'], 'Brng');
-                                echo render($row['eyelet_oring'], 'Org');
-                                echo render($row['eyelet_reducer'], 'Red');
-                                echo render($row['eyelet_sleeve'], 'Slv');
-                                ?>
-                            </div>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php endif; ?>
+<div class="search-box">
+    <h2>Carver Digital Infrastructure: Shock Lookup</h2>
+    <form method="GET">
+        <input type="text" name="search" placeholder="Enter OE#, Shock#, or Vehicle Details..." value="<?= htmlspecialchars($search) ?>" autofocus>
+        <button type="submit" style="padding: 10px 20px;">SEARCH</button>
+    </form>
 </div>
+
+<?php if ($search): ?>
+    <p>Showing <?= count($results) ?> results for "<?= htmlspecialchars($search) ?>"</p>
+    
+    <?php foreach ($results as $row): ?>
+        <div class="result-card">
+            <div class="result-header">
+                <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
+                
+                <div style="color: #666; font-size: 1.1em;">
+                    Shock P/N: <strong><?= display_clean($row[1]) ?></strong>
+                </div>
+                
+                <div style="margin-top:5px; font-style: italic;"><?= display_clean($row[3]) ?></div>
+            </div>
+
+            <div class="spec-grid">
+                <div class="spec-item" style="background: #eef9f0; padding: 5px; border-radius: 4px; border: 1px solid #c3e6cb;">
+                    <span class="spec-label" style="color: #1e7e34;">Shock Kit</span>
+                    <span class="spec-value"><?= display_clean($row[2]) ?></span>
+                </div>
+
+                <div class="spec-item" style="background: #fff3cd; padding: 5px; border-radius: 4px; border: 1px solid #ffeeba;">
+                    <span class="spec-label" style="color: #856404;">Service Kit (Seals)</span>
+                    <span class="spec-value"><?= display_clean($row[4]) ?></span>
+                </div>
+
+                <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_clean($row[12]) ?></span></div>
+                <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_clean($row[7]) ?></span></div>
+                <div class="spec-item"><span class="spec-label">Valve</span><span class="spec-value"><?= display_clean($row[17]) ?></span></div>
+
+                <div class="mounting-box">
+                    <span class="section-title">Body End Mounting</span>
+                    <div class="sleeve-pair">
+                        <div style="flex:1"><span class="spec-label">Bearing</span><?= display_clean($row[23]) ?></div>
+                        <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_clean($row[26]) ?></div>
+                        <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_clean($row[27]) ?></div>
+                    </div>
+                </div>
+
+                <div class="mounting-box">
+                    <span class="section-title">Eyelet End Mounting</span>
+                    <div class="sleeve-pair">
+                        <div style="flex:1"><span class="spec-label">Bearing</span><?= display_clean($row[28]) ?></div>
+                        <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_clean($row[31]) ?></div>
+                        <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_clean($row[32]) ?></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    <?php endforeach; ?>
+<?php endif; ?>
+
 </body>
 </html>
