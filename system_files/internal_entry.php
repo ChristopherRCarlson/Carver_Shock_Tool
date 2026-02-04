@@ -164,7 +164,7 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
                 <div class="section-header">3. Valving & Internals</div>
                 <div><label>Base Valve</label><input type="text" name="base_valve"></div>
                 <div><label>Metering Rod</label><input type="text" name="metering_rod"></div>
-                <div><label>Valve Code</label><input type="text" name="valve_code"></div>
+                <div><label>Valve</label><input type="text" name="valve_code"></div>
                 <div><label>B.O.C.</label><input type="text" name="boc"></div>
                 <div><label>Bearing Assy</label><input type="text" name="bearing_assembly"></div>
                 <div><label>Adj. Rebound</label><input type="text" name="adjuster_rebound"></div>

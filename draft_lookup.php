@@ -37,7 +37,8 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         // Search OE (Index 0), Shock PN (Index 1), or Description (Index 3)
         if (stripos($data[0], $search) !== FALSE || 
             stripos($data[1], $search) !== FALSE || 
-            stripos($data[3], $search) !== FALSE) {
+            stripos($data[3], $search) !== FALSE || 
+            stripos($data[17], $search) !== FALSE) {
             $results[] = $data;
         }
     }
@@ -137,7 +138,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                         <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_linked_part($row[12]) ?></span></div>
                         <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_linked_part($row[7]) ?></span></div>
                         
-                        <div class="spec-item"><span class="spec-label">Valve Code</span><span class="spec-value"><?= display_clean($row[17]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Valve</span><span class="spec-value"><?= display_linked_part($row[17]) ?></span></div>
                         
                         <div class="spec-item"><span class="spec-label">Base Valve</span><span class="spec-value"><?= display_linked_part($row[14]) ?></span></div>
 
