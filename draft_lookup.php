@@ -1,15 +1,31 @@
 <?php
-// draft_lookup.php - Schema v2.0 (OE-First & Split Sleeves)
+// draft_lookup.php - Schema v2.0 (OE-First, Split Sleeves & Store Linking)
 
 $csvFile = 'system_files/Carver_Shocks_Database.csv';
 
-// Expanded Sanitizer for Display
+// 1. Standard Sanitizer (For non-linked text like Description/Headers)
 function display_clean($data) {
     $val = trim($data ?? '');
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) {
         return '<span class="empty">-</span>';
     }
     return htmlspecialchars($val);
+}
+
+// 2. NEW: Linked Sanitizer (For searchable parts)
+function display_linked_part($data) {
+    $val = trim($data ?? '');
+    
+    // Clean and check for empty
+    if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val) || $val === '') {
+        return '<span class="empty">-</span>';
+    }
+    
+    // Create the Carver Store Search URL
+    $url = "https://www.carverperformance.com/cart.php?target=search&substring=" . urlencode($val);
+    
+    // Return the clickable link
+    return '<a href="' . $url . '" target="_blank" class="part-link">' . htmlspecialchars($val) . '</a>';
 }
 
 $results = [];
@@ -34,88 +50,116 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
 <head>
     <title>Carver Shock Lookup v2.0</title>
     <style>
-        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
-        .search-box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input[type="text"] { width: 70%; padding: 10px; font-size: 1.1em; }
+        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; background-color: #f9f9f9; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        .result-card { background: white; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border-left: 5px solid #007bff; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .result-header { background: #e9ecef; padding: 15px; border-bottom: 1px solid #ddd; }
-        .oe-title { font-size: 1.4em; color: #d9534f; font-weight: bold; }
-        .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; padding: 15px; }
+        .search-box { text-align: center; margin-bottom: 20px; padding: 20px; background: #eee; border-radius: 8px; }
+        input[type="text"] { padding: 10px; width: 60%; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; font-size: 16px; background-color: #d9534f; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #c9302c; }
+
+        .result-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; border-left: 5px solid #d9534f; }
         
-        .spec-item { border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        .spec-label { font-size: 0.8em; color: #666; display: block; text-transform: uppercase; }
-        .spec-value { font-weight: bold; color: #333; }
-        .empty { color: #ccc; font-weight: normal; }
+        .result-header { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .oe-title { font-size: 1.4em; font-weight: bold; color: #d9534f; margin-bottom: 5px; }
         
-        .mounting-box { background: #fcf8e3; padding: 10px; grid-column: span 2; border-radius: 4px; border: 1px solid #faebcc; }
-        .sleeve-pair { display: flex; gap: 10px; margin-top: 5px; }
+        /* Grid Layout for Specs */
+        .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+        .spec-item { background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 0.9em; }
+        .spec-label { display: block; font-weight: bold; color: #555; font-size: 0.8em; margin-bottom: 2px; }
+        .spec-value { display: block; color: #333; font-weight: 500; }
+        
+        /* NEW: Part Link Styling */
+        .part-link { color: #d9534f; text-decoration: none; border-bottom: 1px dotted #d9534f; }
+        .part-link:hover { background-color: #d9534f; color: white; text-decoration: none; border-bottom: none; }
+
+        .empty { color: #ccc; font-style: italic; }
+
+        /* Mounting Box Styling (Sleeve Split) */
+        .mounting-box { grid-column: 1 / -1; background: #fdfdfe; border: 1px solid #e9ecef; padding: 10px; border-radius: 4px; margin-top: 5px; }
+        .section-title { display: block; font-size: 0.85em; font-weight: bold; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #eee; padding-bottom: 3px; }
+        .sleeve-pair { display: flex; gap: 10px; }
+        .sleeve-pair > div { background: #fff; padding: 5px; border: 1px solid #eee; border-radius: 3px; }
+
+        @media (max-width: 600px) {
+            input[type="text"] { width: 100%; margin-bottom: 10px; }
+            .sleeve-pair { flex-direction: column; }
+        }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1 style="text-align: center; color: #d9534f; margin-bottom: 20px;">
+            Carver Shock Lookup Tool
+        </h1>
 
-<div class="container">
-    <h1 style="text-align: center; color: #d9534f; margin-bottom: 20px;">Carver Shock Lookup v2.0</h1>
-
-<div class="search-box">
-    <h2>Carver Digital Infrastructure: Shock Lookup</h2>
-    <form method="GET">
-        <input type="text" name="search" placeholder="Enter OE#, Shock#, or Vehicle Details..." value="<?= htmlspecialchars($search) ?>" autofocus>
-        <button type="submit" style="padding: 10px 20px;">SEARCH</button>
-    </form>
-</div>
-
-<?php if ($search): ?>
-    <p>Showing <?= count($results) ?> results for "<?= htmlspecialchars($search) ?>"</p>
-    
-    <?php foreach ($results as $row): ?>
-        <div class="result-card">
-            <div class="result-header">
-                <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
-                
-                <div style="color: #666666; font-size: 1.1em;">
-                    Shock P/N: <strong><?= display_clean($row[1]) ?></strong>
-                </div>
-                
-                <div style="margin-top:5px; font-style: italic;"><?= display_clean($row[3]) ?></div>
-            </div>
-
-            <div class="spec-grid">
-                <div class="spec-item" style="background: #eef9f0; padding: 5px; border-radius: 4px; border: 1px solid #c3e6cb;">
-                    <span class="spec-label" style="color: #1e7e34;">Shock Kit</span>
-                    <span class="spec-value"><?= display_clean($row[2]) ?></span>
-                </div>
-
-                <div class="spec-item" style="background: #fff3cd; padding: 5px; border-radius: 4px; border: 1px solid #ffeeba;">
-                    <span class="spec-label" style="color: #856404;">Service Kit (Seals)</span>
-                    <span class="spec-value"><?= display_clean($row[4]) ?></span>
-                </div>
-
-                <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_clean($row[12]) ?></span></div>
-                <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_clean($row[7]) ?></span></div>
-                <div class="spec-item"><span class="spec-label">Valve</span><span class="spec-value"><?= display_clean($row[17]) ?></span></div>
-
-                <div class="mounting-box">
-                    <span class="section-title">Body End Mounting</span>
-                    <div class="sleeve-pair">
-                        <div style="flex:1"><span class="spec-label">Bearing</span><?= display_clean($row[23]) ?></div>
-                        <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_clean($row[26]) ?></div>
-                        <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_clean($row[27]) ?></div>
-                    </div>
-                </div>
-
-                <div class="mounting-box">
-                    <span class="section-title">Eyelet End Mounting</span>
-                    <div class="sleeve-pair">
-                        <div style="flex:1"><span class="spec-label">Bearing</span><?= display_clean($row[28]) ?></div>
-                        <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_clean($row[31]) ?></div>
-                        <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_clean($row[32]) ?></div>
-                    </div>
-                </div>
-            </div>
+        <div class="search-box">
+            <h2>Carver Digital Infrastructure: Shock Lookup</h2>
+            <form method="GET">
+                <input type="text" name="search" placeholder="Enter OE#, Shock#, or Vehicle Details..." value="<?= htmlspecialchars($search) ?>" autofocus>
+                <button type="submit">SEARCH</button>
+            </form>
         </div>
-    <?php endforeach; ?>
-<?php endif; ?>
 
+        <?php if ($search && empty($results)): ?>
+            <div style="text-align:center; padding: 20px; color: #666;">
+                No results found for "<strong><?= htmlspecialchars($search) ?></strong>".<br>
+                Try entering part of the number (e.g., "51400" or "932-10").
+            </div>
+        <?php endif; ?>
+
+        <?php if (!empty($results)): ?>
+            <?php foreach ($results as $row): ?>
+                <div class="result-card">
+                    <div class="result-header">
+                        <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
+                        
+                        <div style="color: #666; font-size: 1.1em;">
+                            Shock P/N: <strong><?= display_clean($row[1]) ?></strong>
+                        </div>
+                        
+                        <div style="margin-top:5px; font-style: italic; color: #000;">
+                            <?= display_clean($row[3]) ?>
+                        </div>
+                    </div>
+
+                    <div class="spec-grid">
+                        <div class="spec-item" style="background: #eef9f0; padding: 5px; border-radius: 4px; border: 1px solid #c3e6cb;">
+                            <span class="spec-label" style="color: #1e7e34;">Rebuild Kit</span>
+                            <span class="spec-value"><?= display_linked_part($row[2]) ?></span>
+                        </div>
+
+                        <div class="spec-item" style="background: #fff3cd; padding: 5px; border-radius: 4px; border: 1px solid #ffeeba;">
+                            <span class="spec-label" style="color: #856404;">Service Kit</span>
+                            <span class="spec-value"><?= display_linked_part($row[4]) ?></span>
+                        </div>
+
+                        <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_linked_part($row[12]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_linked_part($row[7]) ?></span></div>
+                        
+                        <div class="spec-item"><span class="spec-label">Valve Code</span><span class="spec-value"><?= display_clean($row[17]) ?></span></div>
+                        
+                        <div class="spec-item"><span class="spec-label">Base Valve</span><span class="spec-value"><?= display_linked_part($row[14]) ?></span></div>
+
+                        <div class="mounting-box">
+                            <span class="section-title">Body End Mounting</span>
+                            <div class="sleeve-pair">
+                                <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[23]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[26]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[27]) ?></div>
+                            </div>
+                        </div>
+
+                        <div class="mounting-box">
+                            <span class="section-title">Eyelet End Mounting</span>
+                            <div class="sleeve-pair">
+                                <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[28]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[31]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[32]) ?></div>
+                            </div>
+                        </div>
+                    </div> </div> <?php endforeach; ?>
+        <?php endif; ?>
+    </div>
 </body>
 </html>

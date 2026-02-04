@@ -147,11 +147,11 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
                     <label>OE P/N (Search Key) *</label>
                     <input type="text" name="oe_pn" required onblur="checkDuplicate(this)">
                 </div>
-                <div class="half"><label>Shock Kit</label><input type="text" name="shock_kit"></div>
                 <div class="half"><label>Shock P/N</label><input type="text" name="shock_pn"></div>
-                <div class="half"><label>Description</label><input type="text" name="description"></div>
+                <div class="full"><label>Description</label><input type="text" name="description"></div>
 
                 <div class="section-header">2. Core Components</div>
+                <div><label>Rebuild Kit</label><input type="text" name="shock_kit"></div>
                 <div><label>Service Kit</label><input type="text" name="service_kit"></div>
                 <div><label>Shaft</label><input type="text" name="shaft"></div>
                 <div><label>Body</label><input type="text" name="body"></div>
