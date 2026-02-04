@@ -54,6 +54,9 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
 </head>
 <body>
 
+<div class="container">
+    <h1 style="text-align: center; color: #d9534f; margin-bottom: 20px;">Carver Shock Lookup v2.0</h1>
+
 <div class="search-box">
     <h2>Carver Digital Infrastructure: Shock Lookup</h2>
     <form method="GET">
@@ -70,7 +73,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             <div class="result-header">
                 <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
                 
-                <div style="color: #666; font-size: 1.1em;">
+                <div style="color: #666666; font-size: 1.1em;">
                     Shock P/N: <strong><?= display_clean($row[1]) ?></strong>
                 </div>
                 

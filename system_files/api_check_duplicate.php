@@ -14,10 +14,12 @@ $csvFile = __DIR__ . '/Carver_Shocks_Database.csv';
 $exists = false;
 
 if (($handle = fopen($csvFile, "r")) !== FALSE) {
-    // Column 1 is usually Shock P/N (index 1 in 0-based array)
-    // We check both col 0 (Kit) and col 1 (Shock PN) just in case
+    // Skip header row if necessary (optional but recommended)
+    fgetcsv($handle); 
+
+    // Column 0 is now OE P/N (the primary Search Key in Schema v2.0)
     while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
-        if (isset($data[1]) && strcasecmp(trim($data[1]), trim($query)) == 0) {
+        if (isset($data[0]) && strcasecmp(trim($data[0]), trim($query)) == 0) {
             $exists = true;
             break;
         }
