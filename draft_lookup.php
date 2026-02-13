@@ -25,7 +25,7 @@ function display_linked_part($data) {
     $url = "https://www.carverperformance.com/cart.php?target=search&substring=" . urlencode($val);
     
     // Return the clickable link
-    return '<a href="' . $url . '" target="_blank" class="part-link">' . htmlspecialchars($val) . '</a>';
+    return '<a href="' . $url . '" target="_blank" class="part-link validate-me" data-sku="' . htmlspecialchars($val) . '">' . htmlspecialchars($val) . '</a>';
 }
 
 $results = [];
@@ -73,6 +73,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         /* NEW: Part Link Styling */
         .part-link { color: #d9534f; text-decoration: none; border-bottom: 1px dotted #d9534f; }
         .part-link:hover { background-color: #d9534f; color: white; text-decoration: none; border-bottom: none; }
+        .part-link.dead-link{ color: #000!important; text-decoration: none!important; border-bottom: none!important; cursor: default!important; pointer-events: none; }
 
         .empty { color: #ccc; font-style: italic; }
 
@@ -107,7 +108,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             padding: 10px;
             text-align: center;
             width: 150px;
-            cursor: pointer;
+            cursor: default;
             transition: transform 0.2s;
         }
 
@@ -122,6 +123,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             object-fit: contain;
             margin-bottom: 8px;
             background: #eee;
+            cursor: zoom-in;
         }
 
         .kit-type-label {
@@ -187,22 +189,32 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                     </div>
 
                     <div class="maintenance-section">
-                        <div class="kit-card" onclick="openKitModal('<?= addslashes(trim($row[2])) ?>')">
+                        <div class="kit-card">
                             <span class="kit-type-label" style="color: #1e7e34;">Rebuild Kit</span>
+                            
                             <img class="kit-thumb" 
                                 src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[2])) ?>" 
-                                onerror="this.src='https://placehold.co/200x150?text=No+Photo'"
+                                onclick="openKitModal('<?= addslashes(trim($row[2])) ?>')"
+                                onerror="invalidateLink(this, '<?= addslashes(trim($row[2])) ?>')"
                                 alt="Rebuild Kit">
-                            <div style="font-weight: bold; font-size: 0.9em;"><?= display_clean($row[2]) ?></div>
+                            
+                            <div style="font-weight: bold; font-size: 0.9em;">
+                                <?= display_linked_part($row[2]) ?>
+                            </div>
                         </div>
 
-                        <div class="kit-card" onclick="openKitModal('<?= addslashes(trim($row[4])) ?>')">
+                        <div class="kit-card">
                             <span class="kit-type-label" style="color: #856404;">Service Kit</span>
+                            
                             <img class="kit-thumb" 
                                 src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[4])) ?>" 
-                                onerror="this.src='https://placehold.co/200x150?text=No+Photo'"
+                                onclick="openKitModal('<?= addslashes(trim($row[4])) ?>')"
+                                onerror="invalidateLink(this, '<?= addslashes(trim($row[4])) ?>')"
                                 alt="Service Kit">
-                            <div style="font-weight: bold; font-size: 0.9em;"><?= display_clean($row[4]) ?></div>
+                            
+                            <div style="font-weight: bold; font-size: 0.9em;">
+                                <?= display_linked_part($row[4]) ?>
+                            </div>
                         </div>
                     </div>
 
@@ -247,6 +259,49 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                 modalImg.src = "https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(partNum);
                 modal.style.display = 'flex';
             }
+            function invalidateLink(imgElement, partNum) {
+                // 1. Determine which placeholder to show
+                const isNoSku = (!partNum || partNum.trim() === '-' || partNum.trim().toUpperCase() === 'N/A');
+                const label = isNoSku ? "No+SKU" : "No+Photo";
+                
+                // 2. Set the placeholder image
+                imgElement.src = "https://placehold.co/150x150?text=" + label;
+                
+                // 3. REMOVE THE MAGNIFYING GLASS & MODAL
+                imgElement.style.cursor = "default"; // Reverts zoom-in to standard arrow
+                imgElement.onclick = null;           // Disables the openKitModal function
+
+                // 4. Convert the link to black text (Co-Pilot's working logic)
+                const linkContainer = imgElement.nextElementSibling;
+                if (linkContainer) {
+                    const link = linkContainer.querySelector('a');
+                    if (link) {
+                        link.outerHTML = '<span class="empty">' + link.textContent + '</span>';
+                    }
+                }
+            }
+            window.addEventListener('load', function() {
+                // Find all links flagged for validation
+                const linksToValidate = document.querySelectorAll('.part-link.validate-me');
+
+                linksToValidate.forEach(link => {
+                    const sku = link.getAttribute('data-sku');
+                    
+                    // Use a HEAD request to check existence without downloading the image
+                    fetch("https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(sku), {
+                        method: 'HEAD'
+                    })
+                    .then(response => {
+                        if (response.status === 404) {
+                            // If the scraper can't find it, kill the link
+                            link.classList.add('dead-link');
+                        }
+                    })
+                    .catch(err => {
+                        // If there's a network error, we leave the link active just in case
+                    });
+                });
+            });
         </script> 
     </div>
 </body>

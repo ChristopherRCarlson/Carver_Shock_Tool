@@ -8,7 +8,7 @@ header("Access-Control-Allow-Methods: GET");
 $sku = $_GET['sku'] ?? '';
 
 if (!$sku || $sku === '-' || $sku === 'N/A') {
-    header("Location: https://placehold.co/200x150?text=No+SKU");
+    http_response_code(404);
     exit;
 }
 
@@ -90,6 +90,6 @@ if ($foundUrl) {
     }
 }
 
-header("Location: https://placehold.co/200x150?text=Not+Found");
+http_response_code(404);
 exit;
 ?>
