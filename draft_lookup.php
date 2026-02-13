@@ -86,6 +86,70 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             input[type="text"] { width: 100%; margin-bottom: 10px; }
             .sleeve-pair { flex-direction: column; }
         }
+
+        .maintenance-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px 0;
+            background: #fdfdfd;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed #bbb;
+            justify-content: space-between;
+        }
+
+        .kit-card {
+            flex: 1;
+            max-width: 48%;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            width: 150px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .kit-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .kit-thumb {
+            width: 100%;
+            height: 150px;
+            object-fit: contain;
+            margin-bottom: 8px;
+            background: #eee;
+        }
+
+        .kit-type-label {
+            display: block;
+            font-size: 0.8em;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        /* Modal for expanding image */
+        #kit-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #kit-modal img {
+            max-width: 90%;
+            max-height: 90%;
+            background: white;
+            padding: 10px;
+        }
     </style>
 </head>
 <body>
@@ -114,32 +178,38 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                 <div class="result-card">
                     <div class="result-header">
                         <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
-                        
                         <div style="color: #666; font-size: 1.1em;">
                             Shock P/N: <strong><?= display_clean($row[1]) ?></strong>
                         </div>
-                        
                         <div style="margin-top:5px; font-style: italic; color: #000;">
                             <?= display_clean($row[3]) ?>
                         </div>
                     </div>
 
+                    <div class="maintenance-section">
+                        <div class="kit-card" onclick="openKitModal('<?= addslashes(trim($row[2])) ?>')">
+                            <span class="kit-type-label" style="color: #1e7e34;">Rebuild Kit</span>
+                            <img class="kit-thumb" 
+                                src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[2])) ?>" 
+                                onerror="this.src='https://placehold.co/200x150?text=No+Photo'"
+                                alt="Rebuild Kit">
+                            <div style="font-weight: bold; font-size: 0.9em;"><?= display_clean($row[2]) ?></div>
+                        </div>
+
+                        <div class="kit-card" onclick="openKitModal('<?= addslashes(trim($row[4])) ?>')">
+                            <span class="kit-type-label" style="color: #856404;">Service Kit</span>
+                            <img class="kit-thumb" 
+                                src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[4])) ?>" 
+                                onerror="this.src='https://placehold.co/200x150?text=No+Photo'"
+                                alt="Service Kit">
+                            <div style="font-weight: bold; font-size: 0.9em;"><?= display_clean($row[4]) ?></div>
+                        </div>
+                    </div>
+
                     <div class="spec-grid">
-                        <div class="spec-item" style="background: #eef9f0; padding: 5px; border-radius: 4px; border: 1px solid #c3e6cb;">
-                            <span class="spec-label" style="color: #1e7e34;">Rebuild Kit</span>
-                            <span class="spec-value"><?= display_linked_part($row[2]) ?></span>
-                        </div>
-
-                        <div class="spec-item" style="background: #fff3cd; padding: 5px; border-radius: 4px; border: 1px solid #ffeeba;">
-                            <span class="spec-label" style="color: #856404;">Service Kit</span>
-                            <span class="spec-value"><?= display_linked_part($row[4]) ?></span>
-                        </div>
-
                         <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_linked_part($row[12]) ?></span></div>
                         <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_linked_part($row[7]) ?></span></div>
-                        
                         <div class="spec-item"><span class="spec-label">Valve</span><span class="spec-value"><?= display_linked_part($row[17]) ?></span></div>
-                        
                         <div class="spec-item"><span class="spec-label">Base Valve</span><span class="spec-value"><?= display_linked_part($row[14]) ?></span></div>
 
                         <div class="mounting-box">
@@ -159,8 +229,25 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                                 <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[32]) ?></div>
                             </div>
                         </div>
-                    </div> </div> <?php endforeach; ?>
+                    </div> 
+                </div>
+            <?php endforeach; ?>
         <?php endif; ?>
+        <div id="kit-modal" onclick="this.style.display='none'">
+            <img id="modal-img" src="">
+        </div>
+        <script>
+            function openKitModal(partNum) {
+                if (!partNum || partNum === 'N/A' || partNum === '-') return;
+                
+                const modal = document.getElementById('kit-modal');
+                const modalImg = document.getElementById('modal-img');
+                
+                // Use the bridge script for the modal too
+                modalImg.src = "https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(partNum);
+                modal.style.display = 'flex';
+            }
+        </script> 
     </div>
 </body>
 </html>
