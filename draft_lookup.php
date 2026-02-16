@@ -24,7 +24,7 @@ function display_linked_part($data) {
     // Create the Carver Store Search URL
     $url = "https://www.carverperformance.com/cart.php?target=search&substring=" . urlencode($val);
     
-    // Return the clickable link
+    // Return the clickable link (marked for validation)
     return '<a href="' . $url . '" target="_blank" class="part-link validate-me" data-sku="' . htmlspecialchars($val) . '">' . htmlspecialchars($val) . '</a>';
 }
 
@@ -153,6 +153,65 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             padding: 10px;
         }
     </style>
+    <script>
+        // Core Logic placed in HEAD to avoid Race Conditions
+        const CACHE_KEY = 'cp_sku_cache';
+        const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 Days in ms
+
+        function getCache() {
+            try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); }
+            catch (e) { return {}; }
+        }
+
+        function setCache(sku, isValid) {
+            const cache = getCache();
+            cache[sku] = { v: isValid, t: Date.now() };
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        }
+
+        function invalidateLink(element, partNum) {
+            const isNoSku = (!partNum || partNum.trim() === '-' || partNum.trim().toUpperCase() === 'N/A');
+            
+            // CASE 1: It's a Kit Image
+            if (element.tagName === 'IMG') {
+                element.src = "https://placehold.co/150x150?text=" + (isNoSku ? "No+SKU" : "No+Photo");
+                element.style.cursor = "default";
+                element.onclick = null;
+
+                const linkContainer = element.nextElementSibling;
+                if (linkContainer) {
+                    const link = linkContainer.querySelector('a');
+                    if (link) {
+                        // Replace the text link below the image too
+                        const span = document.createElement('span');
+                        span.className = 'empty dead-link';
+                        span.textContent = link.textContent;
+                        link.parentNode.replaceChild(span, link);
+                    }
+                }
+            } 
+            // CASE 2: It's a Text Link (Valve, Base Valve, etc.)
+            else if (element.tagName === 'A') {
+                // The Nuclear Option: Destroy the link and replace it with a span
+                const span = document.createElement('span');
+                span.className = 'empty dead-link'; // Inherits your grey/black styling
+                span.textContent = element.textContent;
+                
+                // Swap them out in the DOM
+                element.parentNode.replaceChild(span, element);
+                
+                // Update cache so we don't check this again
+                setCache(partNum, false);
+            }
+        }
+
+        function openKitModal(partNum) {
+            if (!partNum || partNum === 'N/A' || partNum === '-') return;
+            const modalImg = document.getElementById('modal-img');
+            modalImg.src = "https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(partNum);
+            document.getElementById('kit-modal').style.display = 'flex';
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -194,6 +253,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                             
                             <img class="kit-thumb" 
                                 src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[2])) ?>" 
+                                data-sku="<?= htmlspecialchars(trim($row[2])) ?>"
                                 onclick="openKitModal('<?= addslashes(trim($row[2])) ?>')"
                                 onerror="invalidateLink(this, '<?= addslashes(trim($row[2])) ?>')"
                                 alt="Rebuild Kit">
@@ -208,6 +268,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                             
                             <img class="kit-thumb" 
                                 src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[4])) ?>" 
+                                data-sku="<?= htmlspecialchars(trim($row[4])) ?>"
                                 onclick="openKitModal('<?= addslashes(trim($row[4])) ?>')"
                                 onerror="invalidateLink(this, '<?= addslashes(trim($row[4])) ?>')"
                                 alt="Service Kit">
@@ -248,61 +309,87 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         <div id="kit-modal" onclick="this.style.display='none'">
             <img id="modal-img" src="">
         </div>
-        <script>
-            function openKitModal(partNum) {
-                if (!partNum || partNum === 'N/A' || partNum === '-') return;
-                
-                const modal = document.getElementById('kit-modal');
-                const modalImg = document.getElementById('modal-img');
-                
-                // Use the bridge script for the modal too
-                modalImg.src = "https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(partNum);
-                modal.style.display = 'flex';
-            }
-            function invalidateLink(imgElement, partNum) {
-                // 1. Determine which placeholder to show
-                const isNoSku = (!partNum || partNum.trim() === '-' || partNum.trim().toUpperCase() === 'N/A');
-                const label = isNoSku ? "No+SKU" : "No+Photo";
-                
-                // 2. Set the placeholder image
-                imgElement.src = "https://placehold.co/150x150?text=" + label;
-                
-                // 3. REMOVE THE MAGNIFYING GLASS & MODAL
-                imgElement.style.cursor = "default"; // Reverts zoom-in to standard arrow
-                imgElement.onclick = null;           // Disables the openKitModal function
 
-                // 4. Convert the link to black text (Co-Pilot's working logic)
-                const linkContainer = imgElement.nextElementSibling;
-                if (linkContainer) {
-                    const link = linkContainer.querySelector('a');
-                    if (link) {
-                        link.outerHTML = '<span class="empty">' + link.textContent + '</span>';
+        <script>
+            window.addEventListener('load', function() {
+                // 1. Select BOTH Kit Images AND the Text Links
+                // We combine them into one list called 'targets'
+                const targets = document.querySelectorAll('img.kit-thumb, .part-link.validate-me');
+                const cache = getCache();
+                
+                // --- BATCHING ENGINE ---
+                let validationQueue = [];
+                let processingTimeout = null;
+
+                function processQueue() {
+                    if (validationQueue.length === 0) return;
+                    
+                    const batch = validationQueue.splice(0, 5);
+                    
+                    Promise.all(batch.map(sku => {
+                        return fetch("https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(sku), { method: 'HEAD' })
+                            .then(res => {
+                                const isValid = res.status !== 404;
+                                setCache(sku, isValid); 
+                                
+                                // If invalid, execute the "Nuclear Option" on ALL matching elements
+                                if (!isValid) {
+                                    document.querySelectorAll(`[data-sku="${sku}"]`).forEach(el => invalidateLink(el, sku));
+                                }
+                            })
+                            .catch(() => {});
+                    })).then(() => {
+                        if (validationQueue.length > 0) {
+                            setTimeout(processQueue, 200);
+                        } else {
+                            processingTimeout = null;
+                        }
+                    });
+                }
+
+                function scheduleSkuValidation(sku) {
+                    if (!validationQueue.includes(sku)) {
+                        validationQueue.push(sku);
+                        if (!processingTimeout) {
+                            processingTimeout = setTimeout(processQueue, 200);
+                        }
                     }
                 }
-            }
-            window.addEventListener('load', function() {
-                // Find all links flagged for validation
-                const linksToValidate = document.querySelectorAll('.part-link.validate-me');
+                // -----------------------
 
-                linksToValidate.forEach(link => {
-                    const sku = link.getAttribute('data-sku');
-                    
-                    // Use a HEAD request to check existence without downloading the image
-                    fetch("https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(sku), {
-                        method: 'HEAD'
-                    })
-                    .then(response => {
-                        if (response.status === 404) {
-                            // If the scraper can't find it, kill the link
-                            link.classList.add('dead-link');
+                // 2. The Observer
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) return;
+                        
+                        const el = entry.target;
+                        let sku = el.dataset.sku;
+
+                        // Fallback for images
+                        if (!sku && el.tagName === 'IMG') {
+                            const m = el.src.match(/sku=([^&]+)/);
+                            if (m) sku = decodeURIComponent(m[1]);
+                            if (sku) el.dataset.sku = sku;
                         }
-                    })
-                    .catch(err => {
-                        // If there's a network error, we leave the link active just in case
+
+                        if (!sku) { observer.unobserve(el); return; }
+
+                        const cached = cache[sku];
+                        if (cached && (Date.now() - cached.t < CACHE_TTL)) {
+                            if (cached.v === false) invalidateLink(el, sku);
+                        } else {
+                            scheduleSkuValidation(sku);
+                        }
+
+                        observer.unobserve(el);
                     });
-                });
+                }, { root: null, rootMargin: '200px', threshold: 0.01 });
+
+                // 3. THIS IS THE KEY FIX:
+                // We loop through 'targets' (which includes the links), not just 'images'
+                targets.forEach(el => observer.observe(el));
             });
-        </script> 
+        </script>
     </div>
 </body>
 </html>
