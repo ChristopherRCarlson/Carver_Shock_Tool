@@ -24,8 +24,8 @@ function display_linked_part($data) {
     // Create the Carver Store Search URL
     $url = "https://www.carverperformance.com/cart.php?target=search&substring=" . urlencode($val);
     
-    // Return the clickable link
-    return '<a href="' . $url . '" target="_blank" class="part-link">' . htmlspecialchars($val) . '</a>';
+    // Return the clickable link (marked for validation)
+    return '<a href="' . $url . '" target="_blank" class="part-link validate-me" data-sku="' . htmlspecialchars($val) . '">' . htmlspecialchars($val) . '</a>';
 }
 
 $results = [];
@@ -73,6 +73,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         /* NEW: Part Link Styling */
         .part-link { color: #d9534f; text-decoration: none; border-bottom: 1px dotted #d9534f; }
         .part-link:hover { background-color: #d9534f; color: white; text-decoration: none; border-bottom: none; }
+        .part-link.dead-link{ color: #000!important; text-decoration: none!important; border-bottom: none!important; cursor: default!important; pointer-events: none; }
 
         .empty { color: #ccc; font-style: italic; }
 
@@ -107,7 +108,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             padding: 10px;
             text-align: center;
             width: 150px;
-            cursor: pointer;
+            cursor: default;
             transition: transform 0.2s;
         }
 
@@ -122,6 +123,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             object-fit: contain;
             margin-bottom: 8px;
             background: #eee;
+            cursor: zoom-in;
         }
 
         .kit-type-label {
@@ -151,6 +153,65 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             padding: 10px;
         }
     </style>
+    <script>
+        // Core Logic placed in HEAD to avoid Race Conditions
+        const CACHE_KEY = 'cp_sku_cache';
+        const CACHE_TTL = 7 * 24 * 60 * 60 * 1000; // 7 Days in ms
+
+        function getCache() {
+            try { return JSON.parse(localStorage.getItem(CACHE_KEY) || '{}'); }
+            catch (e) { return {}; }
+        }
+
+        function setCache(sku, isValid) {
+            const cache = getCache();
+            cache[sku] = { v: isValid, t: Date.now() };
+            localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+        }
+
+        function invalidateLink(element, partNum) {
+            const isNoSku = (!partNum || partNum.trim() === '-' || partNum.trim().toUpperCase() === 'N/A');
+            
+            // CASE 1: It's a Kit Image
+            if (element.tagName === 'IMG') {
+                element.src = "https://placehold.co/150x150?text=" + (isNoSku ? "No+SKU" : "No+Photo");
+                element.style.cursor = "default";
+                element.onclick = null;
+
+                const linkContainer = element.nextElementSibling;
+                if (linkContainer) {
+                    const link = linkContainer.querySelector('a');
+                    if (link) {
+                        // Replace the text link below the image too
+                        const span = document.createElement('span');
+                        span.className = 'empty dead-link';
+                        span.textContent = link.textContent;
+                        link.parentNode.replaceChild(span, link);
+                    }
+                }
+            } 
+            // CASE 2: It's a Text Link (Valve, Base Valve, etc.)
+            else if (element.tagName === 'A') {
+                // The Nuclear Option: Destroy the link and replace it with a span
+                const span = document.createElement('span');
+                span.className = 'empty dead-link'; // Inherits your grey/black styling
+                span.textContent = element.textContent;
+                
+                // Swap them out in the DOM
+                element.parentNode.replaceChild(span, element);
+                
+                // Update cache so we don't check this again
+                setCache(partNum, false);
+            }
+        }
+
+        function openKitModal(partNum) {
+            if (!partNum || partNum === 'N/A' || partNum === '-') return;
+            const modalImg = document.getElementById('modal-img');
+            modalImg.src = "https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(partNum);
+            document.getElementById('kit-modal').style.display = 'flex';
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -187,22 +248,34 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                     </div>
 
                     <div class="maintenance-section">
-                        <div class="kit-card" onclick="openKitModal('<?= addslashes(trim($row[2])) ?>')">
+                        <div class="kit-card">
                             <span class="kit-type-label" style="color: #1e7e34;">Rebuild Kit</span>
+                            
                             <img class="kit-thumb" 
                                 src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[2])) ?>" 
-                                onerror="this.src='https://placehold.co/200x150?text=No+Photo'"
+                                data-sku="<?= htmlspecialchars(trim($row[2])) ?>"
+                                onclick="openKitModal('<?= addslashes(trim($row[2])) ?>')"
+                                onerror="invalidateLink(this, '<?= addslashes(trim($row[2])) ?>')"
                                 alt="Rebuild Kit">
-                            <div style="font-weight: bold; font-size: 0.9em;"><?= display_clean($row[2]) ?></div>
+                            
+                            <div style="font-weight: bold; font-size: 0.9em;">
+                                <?= display_linked_part($row[2]) ?>
+                            </div>
                         </div>
 
-                        <div class="kit-card" onclick="openKitModal('<?= addslashes(trim($row[4])) ?>')">
+                        <div class="kit-card">
                             <span class="kit-type-label" style="color: #856404;">Service Kit</span>
+                            
                             <img class="kit-thumb" 
                                 src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[4])) ?>" 
-                                onerror="this.src='https://placehold.co/200x150?text=No+Photo'"
+                                data-sku="<?= htmlspecialchars(trim($row[4])) ?>"
+                                onclick="openKitModal('<?= addslashes(trim($row[4])) ?>')"
+                                onerror="invalidateLink(this, '<?= addslashes(trim($row[4])) ?>')"
                                 alt="Service Kit">
-                            <div style="font-weight: bold; font-size: 0.9em;"><?= display_clean($row[4]) ?></div>
+                            
+                            <div style="font-weight: bold; font-size: 0.9em;">
+                                <?= display_linked_part($row[4]) ?>
+                            </div>
                         </div>
                     </div>
 
@@ -236,18 +309,87 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         <div id="kit-modal" onclick="this.style.display='none'">
             <img id="modal-img" src="">
         </div>
+
         <script>
-            function openKitModal(partNum) {
-                if (!partNum || partNum === 'N/A' || partNum === '-') return;
+            window.addEventListener('load', function() {
+                // 1. Select BOTH Kit Images AND the Text Links
+                // We combine them into one list called 'targets'
+                const targets = document.querySelectorAll('img.kit-thumb, .part-link.validate-me');
+                const cache = getCache();
                 
-                const modal = document.getElementById('kit-modal');
-                const modalImg = document.getElementById('modal-img');
-                
-                // Use the bridge script for the modal too
-                modalImg.src = "https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(partNum);
-                modal.style.display = 'flex';
-            }
-        </script> 
+                // --- BATCHING ENGINE ---
+                let validationQueue = [];
+                let processingTimeout = null;
+
+                function processQueue() {
+                    if (validationQueue.length === 0) return;
+                    
+                    const batch = validationQueue.splice(0, 5);
+                    
+                    Promise.all(batch.map(sku => {
+                        return fetch("https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(sku), { method: 'HEAD' })
+                            .then(res => {
+                                const isValid = res.status !== 404;
+                                setCache(sku, isValid); 
+                                
+                                // If invalid, execute the "Nuclear Option" on ALL matching elements
+                                if (!isValid) {
+                                    document.querySelectorAll(`[data-sku="${sku}"]`).forEach(el => invalidateLink(el, sku));
+                                }
+                            })
+                            .catch(() => {});
+                    })).then(() => {
+                        if (validationQueue.length > 0) {
+                            setTimeout(processQueue, 200);
+                        } else {
+                            processingTimeout = null;
+                        }
+                    });
+                }
+
+                function scheduleSkuValidation(sku) {
+                    if (!validationQueue.includes(sku)) {
+                        validationQueue.push(sku);
+                        if (!processingTimeout) {
+                            processingTimeout = setTimeout(processQueue, 200);
+                        }
+                    }
+                }
+                // -----------------------
+
+                // 2. The Observer
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) return;
+                        
+                        const el = entry.target;
+                        let sku = el.dataset.sku;
+
+                        // Fallback for images
+                        if (!sku && el.tagName === 'IMG') {
+                            const m = el.src.match(/sku=([^&]+)/);
+                            if (m) sku = decodeURIComponent(m[1]);
+                            if (sku) el.dataset.sku = sku;
+                        }
+
+                        if (!sku) { observer.unobserve(el); return; }
+
+                        const cached = cache[sku];
+                        if (cached && (Date.now() - cached.t < CACHE_TTL)) {
+                            if (cached.v === false) invalidateLink(el, sku);
+                        } else {
+                            scheduleSkuValidation(sku);
+                        }
+
+                        observer.unobserve(el);
+                    });
+                }, { root: null, rootMargin: '200px', threshold: 0.01 });
+
+                // 3. THIS IS THE KEY FIX:
+                // We loop through 'targets' (which includes the links), not just 'images'
+                targets.forEach(el => observer.observe(el));
+            });
+        </script>
     </div>
 </body>
 </html>
