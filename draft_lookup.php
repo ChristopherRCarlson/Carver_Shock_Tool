@@ -43,6 +43,18 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         }
     }
     fclose($handle);
+    if (empty($results)) {
+        $logFile = 'system_files/missing_skus.log';
+        $timestamp = date("Y-m-d H:i:s");
+        $logEntry = "[$timestamp] IP: {$_SERVER['REMOTE_ADDR']} | Searched: " . $search . PHP_EOL;
+        
+        $logHandle = fopen($logFile, 'a');
+        if ($logHandle !== FALSE && flock($logHandle, LOCK_EX)) {
+            fwrite($logHandle, $logEntry);
+            flock($logHandle, LOCK_UN);
+            fclose($logHandle);
+        }
+    }
 }
 ?>
 
@@ -51,8 +63,8 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
 <head>
     <title>Carver Shock Lookup v2.0</title>
     <style>
-        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 10px; background-color: #f9f9f9; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        body { font-family: sans-serif; margin: 0; background-color: #f9f9f9; }
+        .container { max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
         .search-box { text-align: center; margin-bottom: 20px; padding: 20px; background: #eee; border-radius: 8px; }
         input[type="text"] { padding: 10px; width: 60%; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
@@ -94,8 +106,6 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             margin-bottom: 15px 0;
             background: #fdfdfd;
             padding: 15px;
-            border-radius: 8px;
-            border: 1px dashed #bbb;
             justify-content: space-between;
         }
 
@@ -151,6 +161,32 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             max-height: 90%;
             background: white;
             padding: 10px;
+        }
+
+        /* 1-Page Print Optimization */
+        @media print {
+            @page { margin: 0.5in; } /* Shrinks default browser paper margins */
+            body { background: white !important; font-size: 12px; } /* Scales down text slightly */
+            
+            /* Hide non-essentials */
+            .global-nav, #kit-modal { display: none !important; }
+            
+            /* Remove shadows and reset container */
+            .container { box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
+            
+            /* Tighten up the Search Box space */
+            .search-box { padding: 10px; margin-bottom: 10px; background: white; border: 1px solid #ddd; }
+            .search-box h2 { font-size: 16px; margin: 0 0 10px 0; }
+            input[type="text"], button { padding: 5px; font-size: 12px; }
+            
+            /* Compress the Result Card and Images */
+            .result-card { border: 2px solid #000; padding: 10px; margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid; }
+            .maintenance-section { padding: 10px; margin-bottom: 10px; }
+            .kit-thumb { max-height: 80px; width: auto; margin-bottom: 2px; } /* Crucial for saving vertical space */
+            
+            /* Clean up the grid for ink */
+            .spec-item { background: transparent; border: 1px solid #ccc; padding: 4px; }
+            .part-link { text-decoration: none; color: black; border: none; }
         }
     </style>
     <script>
@@ -214,6 +250,11 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
     </script>
 </head>
 <body>
+    <div class="global-nav" style="background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+        <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>
+        <a href="index.php" style="color: #d9534f; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #d9534f; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
+    </div>
+    
     <div class="container">
         <h1 style="text-align: center; color: #d9534f; margin-bottom: 20px;">
             Carver Shock Lookup Tool
@@ -238,24 +279,50 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             <?php foreach ($results as $row): ?>
                 <div class="result-card">
                     <div class="result-header">
-                        <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
-                        <div style="color: #666; font-size: 1.1em;">
-                            Shock P/N: <strong><?= display_clean($row[1]) ?></strong>
-                        </div>
-                        <div style="margin-top:5px; font-style: italic; color: #000;">
-                            <?= display_clean($row[3]) ?>
+                        <div class="result-header" style="position: relative;">
+                            <a href="mailto:christopherrcarlson101@gmail.com?subject=Data Error Report: SKU <?= htmlspecialchars($row[0]) ?>&body=Please describe the error for OE P/N <?= htmlspecialchars($row[0]) ?>:" 
+                                style="position: absolute; right: 0; top: 0; font-size: 0.8em; color: #888; text-decoration: underline;">
+                                Report Data Error
+                            </a>
+                            <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
+                            <div style="color: #666; font-size: 1.1em;">Shock P/N: <strong><?= display_clean($row[1]) ?></strong></div>
+                            <div style="margin-top:5px; font-style: italic; color: #000;"><?= display_clean($row[3]) ?></div>
                         </div>
                     </div>
+
+                    <?php
+                        // --- NEW: PHP SERVER-SIDE BLANK IMAGE HANDLER ---
+                        
+                        // 1. Process Rebuild Kit ($row[2])
+                        $rebuild_sku = trim($row[2] ?? '');
+                        if (!$rebuild_sku || $rebuild_sku === '-' || strtoupper($rebuild_sku) === 'N/A') {
+                            $rebuild_img = "https://placehold.co/150x150?text=No+SKU";
+                            $rebuild_data = ""; // Keep blank so JS Observer ignores it completely
+                        } else {
+                            $rebuild_img = "https://carverperformance.com/get_image.php?sku=" . urlencode($rebuild_sku);
+                            $rebuild_data = htmlspecialchars($rebuild_sku);
+                        }
+
+                        // 2. Process Service Kit ($row[4])
+                        $service_sku = trim($row[4] ?? '');
+                        if (!$service_sku || $service_sku === '-' || strtoupper($service_sku) === 'N/A') {
+                            $service_img = "https://placehold.co/150x150?text=No+SKU";
+                            $service_data = ""; // Keep blank so JS Observer ignores it completely
+                        } else {
+                            $service_img = "https://carverperformance.com/get_image.php?sku=" . urlencode($service_sku);
+                            $service_data = htmlspecialchars($service_sku);
+                        }
+                    ?>
 
                     <div class="maintenance-section">
                         <div class="kit-card">
                             <span class="kit-type-label" style="color: #1e7e34;">Rebuild Kit</span>
                             
                             <img class="kit-thumb" 
-                                src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[2])) ?>" 
-                                data-sku="<?= htmlspecialchars(trim($row[2])) ?>"
-                                onclick="openKitModal('<?= addslashes(trim($row[2])) ?>')"
-                                onerror="invalidateLink(this, '<?= addslashes(trim($row[2])) ?>')"
+                                src="<?= $rebuild_img ?>" 
+                                data-sku="<?= $rebuild_data ?>"
+                                onclick="openKitModal('<?= addslashes($rebuild_sku) ?>')"
+                                onerror="invalidateLink(this, '<?= addslashes($rebuild_sku) ?>')"
                                 alt="Rebuild Kit">
                             
                             <div style="font-weight: bold; font-size: 0.9em;">
@@ -267,10 +334,10 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                             <span class="kit-type-label" style="color: #856404;">Service Kit</span>
                             
                             <img class="kit-thumb" 
-                                src="https://carverperformance.com/get_image.php?sku=<?= urlencode(trim($row[4])) ?>" 
-                                data-sku="<?= htmlspecialchars(trim($row[4])) ?>"
-                                onclick="openKitModal('<?= addslashes(trim($row[4])) ?>')"
-                                onerror="invalidateLink(this, '<?= addslashes(trim($row[4])) ?>')"
+                                src="<?= $service_img ?>" 
+                                data-sku="<?= $service_data ?>"
+                                onclick="openKitModal('<?= addslashes($service_sku) ?>')"
+                                onerror="invalidateLink(this, '<?= addslashes($service_sku) ?>')"
                                 alt="Service Kit">
                             
                             <div style="font-weight: bold; font-size: 0.9em;">
@@ -324,7 +391,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                 function processQueue() {
                     if (validationQueue.length === 0) return;
                     
-                    const batch = validationQueue.splice(0, 5);
+                    const batch = validationQueue.splice(0, 4);
                     
                     Promise.all(batch.map(sku => {
                         return fetch("https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(sku), { method: 'HEAD' })
@@ -340,7 +407,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                             .catch(() => {});
                     })).then(() => {
                         if (validationQueue.length > 0) {
-                            setTimeout(processQueue, 200);
+                            setTimeout(processQueue, 250);
                         } else {
                             processingTimeout = null;
                         }
@@ -357,33 +424,52 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                 }
                 // -----------------------
 
-                // 2. The Observer
+                // 2. The Observer (Upgraded with 0ms Cache Check & 150ms Dwell Time)
                 const observer = new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
-                        if (!entry.isIntersecting) return;
-                        
                         const el = entry.target;
-                        let sku = el.dataset.sku;
 
-                        // Fallback for images
-                        if (!sku && el.tagName === 'IMG') {
-                            const m = el.src.match(/sku=([^&]+)/);
-                            if (m) sku = decodeURIComponent(m[1]);
-                            if (sku) el.dataset.sku = sku;
+                        if (entry.isIntersecting) {
+                            let sku = el.dataset.sku;
+
+                            // Fallback for images
+                            if (!sku && el.tagName === 'IMG') {
+                                const m = el.src.match(/sku=([^&]+)/);
+                                if (m) sku = decodeURIComponent(m[1]);
+                                if (sku) el.dataset.sku = sku;
+                            }
+
+                            // Actively apply the placeholder for empty or invalid SKUs
+                            if (!sku || sku === '-' || sku.toUpperCase() === 'N/A') { 
+                                invalidateLink(el, sku || ''); 
+                                observer.unobserve(el); 
+                                return; 
+                            }
+
+                            // FIX 1: CHECK CACHE IMMEDIATELY (0ms Delay)
+                            const cached = cache[sku];
+                            if (cached && (Date.now() - cached.t < CACHE_TTL)) {
+                                if (cached.v === false) invalidateLink(el, sku);
+                                
+                                observer.unobserve(el);
+                                return; 
+                            }
+
+                            // FIX 2: ONLY WAIT IF WE ACTUALLY NEED THE SERVER (150ms delay)
+                            el.dataset.timeoutId = setTimeout(() => {
+                                scheduleSkuValidation(sku);
+                                observer.unobserve(el);
+                            }, 150); 
+                        } 
+                        else {
+                            // If it scrolls OFF screen, cancel the pending check
+                            if (el.dataset.timeoutId) {
+                                clearTimeout(el.dataset.timeoutId);
+                                delete el.dataset.timeoutId;
+                            }
                         }
-
-                        if (!sku) { observer.unobserve(el); return; }
-
-                        const cached = cache[sku];
-                        if (cached && (Date.now() - cached.t < CACHE_TTL)) {
-                            if (cached.v === false) invalidateLink(el, sku);
-                        } else {
-                            scheduleSkuValidation(sku);
-                        }
-
-                        observer.unobserve(el);
                     });
-                }, { root: null, rootMargin: '200px', threshold: 0.01 });
+                }, { root: null, rootMargin: '100px', threshold: 0.01 });
 
                 // 3. THIS IS THE KEY FIX:
                 // We loop through 'targets' (which includes the links), not just 'images'

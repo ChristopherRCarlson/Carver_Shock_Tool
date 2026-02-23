@@ -77,8 +77,8 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
 <head>
     <title>Carver | Master Shock Entry</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #e9ecef; padding: 20px; }
-        .container { max-width: 1100px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        body { font-family: 'Segoe UI', sans-serif; background: #e9ecef; margin: 0; padding: 0; }
+        .container { max-width: 1100px; margin: 40px auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         h2 { color: #333; border-bottom: 3px solid #d9534f; padding-bottom: 10px; margin-top: 0; }
         
         .alert { padding: 15px; margin-bottom: 20px; border-radius: 4px; font-weight: bold; }
@@ -135,6 +135,11 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
     </script>
 </head>
 <body>
+    <div style="background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+        <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>
+        <a href="../index.php" style="color: #d9534f; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #d9534f; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
+    </div>
+    
     <div class="container">
         <h2>Master Shock Database Entry</h2>
         <?php echo $message; ?>
