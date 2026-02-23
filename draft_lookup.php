@@ -37,8 +37,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         // Search OE (Index 0), Shock PN (Index 1), or Description (Index 3)
         if (stripos($data[0], $search) !== FALSE || 
             stripos($data[1], $search) !== FALSE || 
-            stripos($data[3], $search) !== FALSE || 
-            stripos($data[17], $search) !== FALSE) {
+            stripos($data[3], $search) !== FALSE ) {
             $results[] = $data;
         }
     }
@@ -226,7 +225,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                     }
                 }
             } 
-            // CASE 2: It's a Text Link (Valve, Base Valve, etc.)
+            // CASE 2: It's a Text Link
             else if (element.tagName === 'A') {
                 // The Nuclear Option: Destroy the link and replace it with a span
                 const span = document.createElement('span');
@@ -349,24 +348,22 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                     <div class="spec-grid">
                         <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_linked_part($row[12]) ?></span></div>
                         <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_linked_part($row[7]) ?></span></div>
-                        <div class="spec-item"><span class="spec-label">Valve</span><span class="spec-value"><?= display_linked_part($row[17]) ?></span></div>
-                        <div class="spec-item"><span class="spec-label">Base Valve</span><span class="spec-value"><?= display_linked_part($row[14]) ?></span></div>
 
                         <div class="mounting-box">
                             <span class="section-title">Body End Mounting</span>
                             <div class="sleeve-pair">
-                                <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[23]) ?></div>
-                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[26]) ?></div>
-                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[27]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[21]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[24]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[25]) ?></div>
                             </div>
                         </div>
 
                         <div class="mounting-box">
                             <span class="section-title">Eyelet End Mounting</span>
                             <div class="sleeve-pair">
-                                <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[28]) ?></div>
-                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[31]) ?></div>
-                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[32]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[26]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[29]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[30]) ?></div>
                             </div>
                         </div>
                     </div> 
