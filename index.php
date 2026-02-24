@@ -28,6 +28,26 @@ if (file_exists($dbFile)) {
         .nav-card span { font-weight: bold; font-size: 1.1em; }
         .nav-card small { color: #888; margin-top: 5px; font-weight: normal; }
         .footer { margin-top: 30px; font-size: 0.8em; color: #aaa; border-top: 1px solid #eee; padding-top: 15px; }
+
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 850px) {
+            body {
+                align-items: flex-start; /* Pushes the dashboard to the top instead of the center */
+                padding-top: 30px; /* Gives it just a little breathing room from the phone's top notch */
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr; /* Forces exactly one column */
+                gap: 15px;
+            }
+            
+            .dashboard-container {
+                padding: 20px; 
+                margin-bottom: 30px;
+            }
+        }
     </style>
 </head>
 <body>

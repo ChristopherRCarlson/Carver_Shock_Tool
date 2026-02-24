@@ -18,7 +18,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         
         $partNum = clean_input($_POST['shock_pn']);
 
-        // Updated Array: Now 33 Columns to accommodate Inner/Outer Sleeves.
         $newRow = [
             clean_input($_POST['oe_pn']), // Main ID
             $partNum,
@@ -34,7 +33,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             clean_input($_POST['reservoir']),
             clean_input($_POST['shaft']),
             clean_input($_POST['bearing_assembly']),
-            clean_input($_POST['base_valve']),
             clean_input($_POST['live_iqs_tractive']),
             clean_input($_POST['boc']),
             clean_input($_POST['res_end_cap']),
@@ -101,6 +99,27 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
         button { background: #d9534f; color: white; border: none; padding: 15px; font-size: 16px; font-weight: bold; cursor: pointer; width: 100%; border-radius: 4px; margin-top:20px;}
         button:hover { background: #c9302c; }
         button:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 850px) {
+            /* Stack the inner/outer sleeve input boxes vertically */
+            .sleeve-container {
+                flex-direction: column;
+                gap: 15px !important;
+            }
+            
+            /* Ensure the inputs take up the full width of the screen */
+            .sleeve-container > div,
+            input[type="text"] {
+                width: 100%;
+            }
+            
+            /* Add some breathing room to the main form container */
+            .form-container {
+                padding: 15px;
+                margin: 10px;
+            }
+        }
     </style>
     <script>
         function checkDuplicate(input) {
@@ -133,6 +152,7 @@ if (isset($_GET['status']) && $_GET['status'] == 'success') {
         }
     </script>
 </head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <body>
     <div style="background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
         <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>

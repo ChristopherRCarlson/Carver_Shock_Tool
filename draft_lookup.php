@@ -94,9 +94,39 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         .sleeve-pair { display: flex; gap: 10px; }
         .sleeve-pair > div { background: #fff; padding: 5px; border: 1px solid #eee; border-radius: 3px; }
 
-        @media (max-width: 600px) {
-            input[type="text"] { width: 100%; margin-bottom: 10px; }
-            .sleeve-pair { flex-direction: column; }
+        /* --- MOBILE OPTIMIZATION (Tablets & Phones) --- */
+        @media (max-width: 850px) {
+            /* Stack multiple shock result cards into a single column */
+            .results-grid {
+                display: grid;
+                grid-template-columns: 1fr; 
+                gap: 15px;
+            }
+
+            /* Stack internal sections vertically */
+            .flex-container, 
+            .mounting-section {
+                display: flex;
+                flex-direction: column; 
+                gap: 10px;
+            }
+
+            /* KEEP YOUR EXISTING SLEEVE LOGIC: Stack inner/outer sleeves */
+            .sleeve-pair { 
+                flex-direction: column; 
+            }
+
+            /* Give the cards a bit more breathing room on phone screens */
+            .result-card {
+                margin: 5px;
+                width: auto;
+            }
+
+            /* Make the top search bar take up the full width */
+            input[type="text"] { 
+                width: 100%; 
+                margin-bottom: 10px; 
+            }
         }
 
         .maintenance-section {
@@ -248,6 +278,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         }
     </script>
 </head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <body>
     <div class="global-nav" style="background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
         <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>
