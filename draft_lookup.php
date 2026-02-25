@@ -1,5 +1,5 @@
 <?php
-// draft_lookup.php - Schema v2.0 (OE-First, Split Sleeves & Store Linking)
+// draft_lookup.php - Schema v3.0 (33-Column Array Integration & Restored UI)
 
 $csvFile = 'system_files/Carver_Shocks_Database.csv';
 
@@ -25,42 +25,34 @@ function display_linked_part($data) {
     $url = "https://www.carverperformance.com/cart.php?target=search&substring=" . urlencode($val);
     
     // Return the clickable link (marked for validation)
-    return '<a href="' . $url . '" target="_blank" class="part-link validate-me" data-sku="' . htmlspecialchars($val) . '">' . htmlspecialchars($val) . '</a>';
+    return '<a href="' . $url . '" target="_blank" class="part-link validate-link" data-sku="' . htmlspecialchars($val) . '">' . htmlspecialchars($val) . '</a>';
 }
 
-$results = [];
 $search = $_GET['search'] ?? '';
+$results = [];
 
 if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
-    $headers = fgetcsv($handle); // Skip header row
-    while (($data = fgetcsv($handle)) !== FALSE) {
-        // Search OE (Index 0), Shock PN (Index 1), or Description (Index 3)
-        if (stripos($data[0], $search) !== FALSE || 
-            stripos($data[1], $search) !== FALSE || 
-            stripos($data[3], $search) !== FALSE ) {
+    $headers = fgetcsv($handle);
+    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+        $found = false;
+        foreach ($data as $col) {
+            if (stripos($col, $search) !== false) {
+                $found = true;
+                break;
+            }
+        }
+        if ($found) {
             $results[] = $data;
         }
     }
     fclose($handle);
-    if (empty($results)) {
-        $logFile = 'system_files/missing_skus.log';
-        $timestamp = date("Y-m-d H:i:s");
-        $logEntry = "[$timestamp] IP: {$_SERVER['REMOTE_ADDR']} | Searched: " . $search . PHP_EOL;
-        
-        $logHandle = fopen($logFile, 'a');
-        if ($logHandle !== FALSE && flock($logHandle, LOCK_EX)) {
-            fwrite($logHandle, $logEntry);
-            flock($logHandle, LOCK_UN);
-            fclose($logHandle);
-        }
-    }
 }
 ?>
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Carver Shock Lookup v2.0</title>
+    <meta charset="UTF-8">
+    <title>Carver Draft Lookup - V3.0 Restored</title>
     <style>
         body { font-family: sans-serif; margin: 0; background-color: #f9f9f9; }
         .container { max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -73,9 +65,8 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         .result-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; border-left: 5px solid #d9534f; }
         
         .result-header { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
-        .oe-title { font-size: 1.4em; font-weight: bold; color: #d9534f; margin-bottom: 5px; }
+        .oe-title { font-size: 1.4em; font-weight: bold; color: #333; }
         
-        /* Grid Layout for Specs */
         .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
         .spec-item { background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 0.9em; }
         .spec-label { display: block; font-weight: bold; color: #555; font-size: 0.8em; margin-bottom: 2px; }
@@ -91,7 +82,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         /* Mounting Box Styling (Sleeve Split) */
         .mounting-box { grid-column: 1 / -1; background: #fdfdfe; border: 1px solid #e9ecef; padding: 10px; border-radius: 4px; margin-top: 5px; }
         .section-title { display: block; font-size: 0.85em; font-weight: bold; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #eee; padding-bottom: 3px; }
-        .sleeve-pair { display: flex; gap: 10px; }
+        .sleeve-pair { display: flex; gap: 10px; flex-wrap: wrap; }
         .sleeve-pair > div { background: #fff; padding: 5px; border: 1px solid #eee; border-radius: 3px; }
 
         /* --- MOBILE OPTIMIZATION (Tablets & Phones) --- */
@@ -132,7 +123,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         .maintenance-section {
             display: flex;
             gap: 15px;
-            margin-bottom: 15px 0;
+            margin-bottom: 15px;
             background: #fdfdfd;
             padding: 15px;
             justify-content: space-between;
@@ -192,30 +183,141 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             padding: 10px;
         }
 
-        /* 1-Page Print Optimization */
+        /* --- PROFESSIONAL SHOP SHEET PRINT ENGINE --- */
         @media print {
-            @page { margin: 0.5in; } /* Shrinks default browser paper margins */
-            body { background: white !important; font-size: 12px; } /* Scales down text slightly */
+            @page { 
+                size: portrait;
+                margin: 0.3in; 
+            }
             
-            /* Hide non-essentials */
-            .global-nav, #kit-modal { display: none !important; }
+            /* 1. Kill the 'Website' junk entirely */
+            .global-nav, .search-box, #kit-modal, .nav-link, form, 
+            [style*="position: absolute; right: 0; top: 0;"] { 
+                display: none !important; 
+            }
             
-            /* Remove shadows and reset container */
-            .container { box-shadow: none; margin: 0; padding: 0; max-width: 100%; }
+            body { 
+                background: white !important; 
+                font-family: "Helvetica", "Arial", sans-serif;
+                font-size: 11pt; 
+                color: black; 
+                margin: 0;
+                padding: 0;
+            }
+
+            .container { 
+                box-shadow: none !important; 
+                margin: 0 !important; 
+                padding: 0 !important; 
+                max-width: 100% !important; 
+            }
+
+            /* 2. Format the Header (OE & Shock P/N) */
+            .result-card { 
+                border: 2px solid black !important; 
+                padding: 15px !important; 
+                margin: 0 !important;
+                page-break-inside: avoid;
+                border-radius: 0;
+            }
+
+            .oe-title { 
+                font-size: 22pt !important; 
+                border-bottom: 2px solid black;
+                margin-bottom: 5px;
+            }
+
+            /* 3. The 'Use | IFP | Nitrogen' Bar */
+            .result-header div[style*="italic"] {
+                font-size: 12pt !important;
+                font-weight: bold !important;
+                margin-bottom: 15px !important;
+                color: black !important;
+            }
+
+            /* 4. Compact Kit Section */
+            .maintenance-section { 
+                display: flex !important;
+                justify-content: flex-start !important;
+                gap: 20px !important;
+                margin-bottom: 15px !important;
+                padding: 10px !important;
+                border: 1px solid #ccc;
+            }
+
+            .kit-card { 
+                border: 1px solid black !important;
+                padding: 5px !important;
+                width: 180px !important;
+                height: auto !important;
+            }
+
+            .kit-thumb { 
+                max-height: 90px !important; 
+                width: auto !important;
+                display: block;
+                margin: 0 auto 5px auto;
+            }
+
+            /* 5. The 33-Column Grid Fix */
+            .spec-grid { 
+                display: grid !important; 
+                grid-template-columns: 1fr 1fr 1fr !important; /* 3-Column layout for readability */
+                gap: 8px !important; 
+            }
+
+            .spec-item { 
+                background: transparent !important; 
+                border: 1px solid #ddd !important; 
+                padding: 5px !important; 
+            }
+
+            .spec-label { 
+                font-size: 8pt !important; 
+                text-transform: uppercase;
+                color: #444 !important;
+            }
+
+            .spec-value { 
+                font-size: 11pt !important; 
+                font-weight: bold !important;
+            }
+
+            /* 6. Mounting Boxes (Keep grouped) */
+            .mounting-box { 
+                grid-column: 1 / -1 !important; 
+                border: 1px solid black !important; 
+                margin-top: 10px !important;
+                padding: 10px !important;
+            }
+
+            .section-title { 
+                font-size: 10pt !important; 
+                background: #eee !important;
+                padding: 3px 5px !important;
+                border-bottom: 1px solid black !important;
+            }
+
+            .sleeve-pair { 
+                display: flex !important; 
+                flex-direction: row !important; /* Force side-by-side even on 'mobile' print */
+                gap: 10px !important;
+                margin-top: 5px;
+            }
+
+            .sleeve-pair > div { 
+                border: 1px dashed #666 !important;
+                flex: 1;
+            }
+
+            /* 7. Clean up Links */
+            .part-link { 
+                text-decoration: none !important; 
+                color: black !important; 
+                border-bottom: none !important; 
+            }
             
-            /* Tighten up the Search Box space */
-            .search-box { padding: 10px; margin-bottom: 10px; background: white; border: 1px solid #ddd; }
-            .search-box h2 { font-size: 16px; margin: 0 0 10px 0; }
-            input[type="text"], button { padding: 5px; font-size: 12px; }
-            
-            /* Compress the Result Card and Images */
-            .result-card { border: 2px solid #000; padding: 10px; margin-bottom: 10px; break-inside: avoid; page-break-inside: avoid; }
-            .maintenance-section { padding: 10px; margin-bottom: 10px; }
-            .kit-thumb { max-height: 80px; width: auto; margin-bottom: 2px; } /* Crucial for saving vertical space */
-            
-            /* Clean up the grid for ink */
-            .spec-item { background: transparent; border: 1px solid #ccc; padding: 4px; }
-            .part-link { text-decoration: none; color: black; border: none; }
+            .empty { color: #aaa !important; }
         }
     </style>
     <script>
@@ -259,7 +361,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
             else if (element.tagName === 'A') {
                 // The Nuclear Option: Destroy the link and replace it with a span
                 const span = document.createElement('span');
-                span.className = 'empty dead-link'; // Inherits your grey/black styling
+                span.className = 'empty dead-link'; 
                 span.textContent = element.textContent;
                 
                 // Swap them out in the DOM
@@ -306,7 +408,10 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
         <?php endif; ?>
 
         <?php if (!empty($results)): ?>
-            <?php foreach ($results as $row): ?>
+            <?php foreach ($results as $row): 
+                // Ensure row has exactly 33 columns before referencing them
+                $row = array_pad($row, 33, '');
+            ?>
                 <div class="result-card">
                     <div class="result-header">
                         <div class="result-header" style="position: relative;">
@@ -316,18 +421,33 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                             </a>
                             <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
                             <div style="color: #666; font-size: 1.1em;">Shock P/N: <strong><?= display_clean($row[1]) ?></strong></div>
-                            <div style="margin-top:5px; font-style: italic; color: #000;"><?= display_clean($row[3]) ?></div>
+                            
+                            <div style="margin-top:5px; font-style: italic; color: #000;">
+                                <?php 
+                                    // Combine specific details logically
+                                    $desc_parts = [];
+                                    if (trim($row[2])) $desc_parts[] = "Use: " . trim($row[2]);
+                                    if (trim($row[5])) $desc_parts[] = "IFP: " . trim($row[5]);
+                                    if (trim($row[6])) $desc_parts[] = "Nitrogen: " . trim($row[6]) . " PSI";
+                                    
+                                    if (empty($desc_parts)) {
+                                        echo '<span class="empty">-</span>';
+                                    } else {
+                                        echo htmlspecialchars(implode(" | ", $desc_parts));
+                                    }
+                                ?>
+                            </div>
                         </div>
                     </div>
 
                     <?php
-                        // --- NEW: PHP SERVER-SIDE BLANK IMAGE HANDLER ---
+                        // --- PHP SERVER-SIDE BLANK IMAGE HANDLER ---
                         
-                        // 1. Process Rebuild Kit ($row[2])
-                        $rebuild_sku = trim($row[2] ?? '');
+                        // 1. Process Rebuild Kit ($row[3])
+                        $rebuild_sku = trim($row[3] ?? '');
                         if (!$rebuild_sku || $rebuild_sku === '-' || strtoupper($rebuild_sku) === 'N/A') {
                             $rebuild_img = "https://placehold.co/150x150?text=No+SKU";
-                            $rebuild_data = ""; // Keep blank so JS Observer ignores it completely
+                            $rebuild_data = ""; // Keep blank so JS Observer ignores it
                         } else {
                             $rebuild_img = "https://carverperformance.com/get_image.php?sku=" . urlencode($rebuild_sku);
                             $rebuild_data = htmlspecialchars($rebuild_sku);
@@ -337,7 +457,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                         $service_sku = trim($row[4] ?? '');
                         if (!$service_sku || $service_sku === '-' || strtoupper($service_sku) === 'N/A') {
                             $service_img = "https://placehold.co/150x150?text=No+SKU";
-                            $service_data = ""; // Keep blank so JS Observer ignores it completely
+                            $service_data = ""; // Keep blank so JS Observer ignores it
                         } else {
                             $service_img = "https://carverperformance.com/get_image.php?sku=" . urlencode($service_sku);
                             $service_data = htmlspecialchars($service_sku);
@@ -347,29 +467,25 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                     <div class="maintenance-section">
                         <div class="kit-card">
                             <span class="kit-type-label" style="color: #1e7e34;">Rebuild Kit</span>
-                            
                             <img class="kit-thumb" 
                                 src="<?= $rebuild_img ?>" 
                                 data-sku="<?= $rebuild_data ?>"
                                 onclick="openKitModal('<?= addslashes($rebuild_sku) ?>')"
                                 onerror="invalidateLink(this, '<?= addslashes($rebuild_sku) ?>')"
                                 alt="Rebuild Kit">
-                            
                             <div style="font-weight: bold; font-size: 0.9em;">
-                                <?= display_linked_part($row[2]) ?>
+                                <?= display_linked_part($row[3]) ?>
                             </div>
                         </div>
 
                         <div class="kit-card">
                             <span class="kit-type-label" style="color: #856404;">Service Kit</span>
-                            
                             <img class="kit-thumb" 
                                 src="<?= $service_img ?>" 
                                 data-sku="<?= $service_data ?>"
                                 onclick="openKitModal('<?= addslashes($service_sku) ?>')"
                                 onerror="invalidateLink(this, '<?= addslashes($service_sku) ?>')"
                                 alt="Service Kit">
-                            
                             <div style="font-weight: bold; font-size: 0.9em;">
                                 <?= display_linked_part($row[4]) ?>
                             </div>
@@ -377,103 +493,75 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                     </div>
 
                     <div class="spec-grid">
-                        <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_linked_part($row[12]) ?></span></div>
-                        <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_linked_part($row[7]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_linked_part($row[7]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Seal Head</span><span class="spec-value"><?= display_linked_part($row[8]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">BO Bumper</span><span class="spec-value"><?= display_linked_part($row[9]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_linked_part($row[10]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Inner Body</span><span class="spec-value"><?= display_linked_part($row[11]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Body Cap</span><span class="spec-value"><?= display_linked_part($row[12]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Bearing Cap</span><span class="spec-value"><?= display_linked_part($row[13]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Metering Rod</span><span class="spec-value"><?= display_linked_part($row[16]) ?></span></div>
+                        <div class="spec-item"><span class="spec-label">Knob - Rebound Adjust</span><span class="spec-value"><?= display_linked_part($row[17]) ?></span></div>
+
+                        <div class="mounting-box">
+                            <span class="section-title">Reservoir Assembly</span>
+                            <div class="sleeve-pair">
+                                <div style="flex:1"><span class="spec-label">Reservoir</span><?= display_linked_part($row[14]) ?></div>
+                                <div style="flex:1"><span class="spec-label">End Cap</span><?= display_linked_part($row[15]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Hose</span><?= display_linked_part($row[18]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Clamp</span><?= display_linked_part($row[19]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Bypass Screws</span><?= display_linked_part($row[20]) ?></div>
+                            </div>
+                        </div>
 
                         <div class="mounting-box">
                             <span class="section-title">Body End Mounting</span>
                             <div class="sleeve-pair">
                                 <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[21]) ?></div>
-                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[24]) ?></div>
-                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[25]) ?></div>
+                                <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[22]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[23]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[24]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[25]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[26]) ?></div>
                             </div>
                         </div>
 
                         <div class="mounting-box">
-                            <span class="section-title">Eyelet End Mounting</span>
+                            <span class="section-title">Shaft End Mounting</span>
                             <div class="sleeve-pair">
-                                <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[26]) ?></div>
-                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[29]) ?></div>
-                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[30]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Eyelet</span><?= display_linked_part($row[27]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[28]) ?></div>
+                                <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[29]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[30]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[31]) ?></div>
+                                <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[32]) ?></div>
                             </div>
                         </div>
                     </div> 
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
+        
         <div id="kit-modal" onclick="this.style.display='none'">
-            <img id="modal-img" src="">
+            <img id="modal-img" src="" alt="Expanded View">
         </div>
 
         <script>
-            window.addEventListener('load', function() {
-                // 1. Select BOTH Kit Images AND the Text Links
-                // We combine them into one list called 'targets'
-                const targets = document.querySelectorAll('img.kit-thumb, .part-link.validate-me');
+            // --- JAVASCRIPT OBSERVER FIX (Scroll Trigger Validation) ---
+            document.addEventListener("DOMContentLoaded", function() {
                 const cache = getCache();
+
+                // 1. Grab ALL links and images that have a data-sku attached
+                const targets = document.querySelectorAll('.validate-link[data-sku], .kit-thumb[data-sku]');
                 
-                // --- BATCHING ENGINE ---
-                let validationQueue = [];
-                let processingTimeout = null;
-
-                function processQueue() {
-                    if (validationQueue.length === 0) return;
-                    
-                    const batch = validationQueue.splice(0, 4);
-                    
-                    Promise.all(batch.map(sku => {
-                        return fetch("https://carverperformance.com/get_image.php?sku=" + encodeURIComponent(sku), { method: 'HEAD' })
-                            .then(res => {
-                                const isValid = res.status !== 404;
-                                setCache(sku, isValid); 
-                                
-                                // If invalid, execute the "Nuclear Option" on ALL matching elements
-                                if (!isValid) {
-                                    document.querySelectorAll(`[data-sku="${sku}"]`).forEach(el => invalidateLink(el, sku));
-                                }
-                            })
-                            .catch(() => {});
-                    })).then(() => {
-                        if (validationQueue.length > 0) {
-                            setTimeout(processQueue, 250);
-                        } else {
-                            processingTimeout = null;
-                        }
-                    });
-                }
-
-                function scheduleSkuValidation(sku) {
-                    if (!validationQueue.includes(sku)) {
-                        validationQueue.push(sku);
-                        if (!processingTimeout) {
-                            processingTimeout = setTimeout(processQueue, 200);
-                        }
-                    }
-                }
-                // -----------------------
-
-                // 2. The Observer (Upgraded with 0ms Cache Check & 150ms Dwell Time)
-                const observer = new IntersectionObserver((entries) => {
+                const observer = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
                         const el = entry.target;
+                        const sku = el.dataset.sku;
+                        
+                        if (!sku) return;
 
                         if (entry.isIntersecting) {
-                            let sku = el.dataset.sku;
-
-                            // Fallback for images
-                            if (!sku && el.tagName === 'IMG') {
-                                const m = el.src.match(/sku=([^&]+)/);
-                                if (m) sku = decodeURIComponent(m[1]);
-                                if (sku) el.dataset.sku = sku;
-                            }
-
-                            // Actively apply the placeholder for empty or invalid SKUs
-                            if (!sku || sku === '-' || sku.toUpperCase() === 'N/A') { 
-                                invalidateLink(el, sku || ''); 
-                                observer.unobserve(el); 
-                                return; 
-                            }
-
                             // FIX 1: CHECK CACHE IMMEDIATELY (0ms Delay)
                             const cached = cache[sku];
                             if (cached && (Date.now() - cached.t < CACHE_TTL)) {
@@ -485,7 +573,20 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
 
                             // FIX 2: ONLY WAIT IF WE ACTUALLY NEED THE SERVER (150ms delay)
                             el.dataset.timeoutId = setTimeout(() => {
-                                scheduleSkuValidation(sku);
+                                // Double check if we already checked this in another frame
+                                const freshCache = getCache();
+                                if (freshCache[sku] && freshCache[sku].v === false) {
+                                    invalidateLink(el, sku);
+                                } else {
+                                    // Send a very fast HEAD request
+                                    fetch('https://carverperformance.com/get_image.php?sku=' + encodeURIComponent(sku), { method: 'HEAD' })
+                                        .then(response => {
+                                            const isValid = response.ok;
+                                            setCache(sku, isValid);
+                                            if (!isValid) invalidateLink(el, sku);
+                                        })
+                                        .catch(() => {});
+                                }
                                 observer.unobserve(el);
                             }, 150); 
                         } 
@@ -499,8 +600,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                     });
                 }, { root: null, rootMargin: '100px', threshold: 0.01 });
 
-                // 3. THIS IS THE KEY FIX:
-                // We loop through 'targets' (which includes the links), not just 'images'
+                // 3. Loop through everything needing validation
                 targets.forEach(el => observer.observe(el));
             });
         </script>
