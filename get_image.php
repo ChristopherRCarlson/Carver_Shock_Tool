@@ -129,9 +129,13 @@ if (stripos($html, '0 products found') !== false || stripos($html, 'no products 
 $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 $isProductPage = (strpos($finalUrl, 'productid=') !== false || strpos($finalUrl, '.html') !== false) && strpos($finalUrl, 'target=search') === false;
 
-// List-Jump Logic
+// List-Jump Logic (Upgraded for X-Cart Clean URLs)
 if (!$isProductPage) {
-    if (preg_match('/href=["\']((?:product\.php\?productid=|[^"\']+\.html)[^"\']*)["\']/i', $html, $m)) {
+    // Looks for X-Cart specific thumbnail/title links OR falls back to old logic
+    if (preg_match('/class=["\'][^"\']*(?:product-thumbnail|product-title)[^"\']*["\'][^>]*href=["\']([^"\']+)["\']/i', $html, $m) ||
+        preg_match('/<a[^>]+href=["\']([^"\']+)["\'][^>]*class=["\'][^"\']*(?:product-thumbnail|product-title)[^"\']*["\']/i', $html, $m) ||
+        preg_match('/href=["\']((?:product\.php\?productid=|[^"\']+\.html)[^"\']*)["\']/i', $html, $m)) {
+        
         $firstResultUrl = $m[1];
         if (strpos($firstResultUrl, 'http') === false) {
             $firstResultUrl = "https://carverperformance.com/" . ltrim($firstResultUrl, '/');
@@ -147,20 +151,21 @@ curl_close($ch);
 
 $foundUrl = null;
 
-// Image Extraction
+// Image Extraction (Upgraded for WEBP)
 if (preg_match('/<img[^>]*class="[^"]*(?:product-image|product-photo|photo)[^"]*"[^>]*src="([^"]+)"/i', $html, $m)) {
     $foundUrl = $m[1];
 } 
 elseif ($isProductPage) {
-    if (preg_match('/class=["\'][^"\']*cloud-zoom[^"\']*["\'][^>]+href=["\']([^"\']+\.(jpg|jpeg|png|gif))["\']/i', $html, $m)) {
+    if (preg_match('/class=["\'][^"\']*cloud-zoom[^"\']*["\'][^>]+href=["\']([^"\']+\.(jpg|jpeg|png|gif|webp))["\']/i', $html, $m)) {
         $foundUrl = $m[1];
     } 
-    elseif (preg_match('/id=["\']product_image["\'][^>]+src=["\']([^"\']+\.(jpg|jpeg|png|gif))["\']/i', $html, $m)) {
+    elseif (preg_match('/id=["\']product_image["\'][^>]+src=["\']([^"\']+\.(jpg|jpeg|png|gif|webp))["\']/i', $html, $m)) {
         $foundUrl = $m[1];
     }
 } 
 
-if (!$foundUrl && preg_match_all('/\/var\/images\/[a-zA-Z0-9\._\-\/]+\.(jpg|jpeg|png|gif)/i', $html, $matches)) {
+// Fallback Folder Extraction (Upgraded for X-Cart 5 /images/product)
+if (!$foundUrl && preg_match_all('/(?:var\/images|images\/product)\/[a-zA-Z0-9\._\-\/]+\.(jpg|jpeg|png|gif|webp)/i', $html, $matches)) {
     $candidates = array_unique($matches[0]);
     foreach ($candidates as $path) {
         $filename = basename($path);

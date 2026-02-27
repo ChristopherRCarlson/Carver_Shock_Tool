@@ -1,5 +1,5 @@
 <?php
-// internal_entry.php - V6.2 (Schema v3.0 - 33 Columns, Unified UI & Mobile Optimized)
+// internal_entry.php - V6.4 (Schema v3.0 - 35 Columns, Unified UI & Mobile Optimized)
 
 $csvFile = __DIR__ . '/Carver_Shocks_Database.csv';
 $message = "";
@@ -29,6 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $oeNum,
         clean_input($_POST['shock_pn']),
         clean_input($_POST['product_use']),
+        clean_input($_POST['location']),
         clean_input($_POST['rebuild_kit']),
         clean_input($_POST['service_kit']),
         clean_input($_POST['ifp_depth']),
@@ -57,6 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         clean_input($_POST['shaft_bearing']),
         clean_input($_POST['shaft_oring']),
         clean_input($_POST['shaft_reducer']),
+        clean_input($_POST['shaft_spacer']),
         clean_input($_POST['shaft_inner_sleeve']),
         clean_input($_POST['shaft_outer_sleeve'])
     ];
@@ -184,15 +186,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </div>
                     <div class="form-group">
                         <label>Product Use</label>
-                        <select name="product_use" id="product_use">
-                            <option value=""></option>
-                            <option value="ATV">ATV</option>
-                            <option value="Snow">Snow</option>
-                            <option value="SxS">SxS</option>
-                            <option value="Custom">Custom</option>
-                            <option value="Moto">Moto</option>
-                        </select>
+                        <input type="text" name="product_use" id="product_use" placeholder="e.g. ATV, Snow, SxS, Custom">
                     </div>
+                    <div class="form-group"><label>Location</label><input type="text" name="location" id="location" placeholder="e.g. Ski, Front, Rear"></div>
                     <div class="form-group"><label>Rebuild Kit</label><input type="text" name="rebuild_kit" id="rebuild_kit"></div>
                     <div class="form-group"><label>Service Kit</label><input type="text" name="service_kit" id="service_kit"></div>
                     <div class="form-group"><label>IFP Depth</label><input type="text" name="ifp_depth" id="ifp_depth"></div>
@@ -204,7 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h3>Primary Hardware</h3>
                 <div class="grid">
                     <div class="form-group"><label>Shaft</label><input type="text" name="shaft" id="shaft"></div>
-                    <div class="form-group"><label>Seal Head</label><input type="text" name="seal_head" id="seal_head"></div>
+                    <div class="form-group"><label>Seal Head - Bearing Assembly</label><input type="text" name="seal_head" id="seal_head"></div>
                     <div class="form-group"><label>BO Bumper</label><input type="text" name="bo_bumper" id="bo_bumper"></div>
                     <div class="form-group"><label>Body</label><input type="text" name="body" id="body"></div>
                     <div class="form-group"><label>Inner Body</label><input type="text" name="inner_body" id="inner_body"></div>
@@ -239,12 +235,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
 
             <div class="form-section">
-                <h3>Eyelet End Mounting</h3>
+                <h3>Shaft / Eyelet End Mounting</h3>
                 <div class="grid">
                     <div class="form-group"><label>Shaft Eyelet</label><input type="text" name="shaft_eyelet" id="shaft_eyelet"></div>
                     <div class="form-group"><label>Shaft Bearing</label><input type="text" name="shaft_bearing" id="shaft_bearing"></div>
                     <div class="form-group"><label>Shaft O-Ring</label><input type="text" name="shaft_oring" id="shaft_oring"></div>
                     <div class="form-group"><label>Shaft Reducer</label><input type="text" name="shaft_reducer" id="shaft_reducer"></div>
+                    <div class="form-group"><label>Shaft Spacer</label><input type="text" name="shaft_spacer" id="shaft_spacer"></div>
                     <div class="form-group"><label>Shaft Inner Sleeve</label><input type="text" name="shaft_inner_sleeve" id="shaft_inner_sleeve"></div>
                     <div class="form-group"><label>Shaft Outer Sleeve</label><input type="text" name="shaft_outer_sleeve" id="shaft_outer_sleeve"></div>
                 </div>
