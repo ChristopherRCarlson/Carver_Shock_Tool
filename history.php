@@ -24,11 +24,11 @@ if (!empty($oe_pn)) {
             // Check if record_id matches the requested OE
             if (isset($data[2]) && strcasecmp(trim($data[2]), $oe_pn) === 0) {
                 $logs[] = [
-                    'action' => $data[3],
-                    'old_data' => json_decode($data[4], true) ?: [],
-                    'new_data' => json_decode($data[5], true) ?: [],
-                    'changed_by' => $data[6],
-                    'timestamp' => $data[7]
+                    'action' => strtoupper(trim($data[3] ?? 'UNKNOWN')),
+                    'old_data' => json_decode(trim($data[4] ?? '[]'), true) ?: [],
+                    'new_data' => json_decode(trim($data[5] ?? '[]'), true) ?: [],
+                    'changed_by' => trim($data[6] ?? 'Unknown IP'),
+                    'timestamp' => trim($data[7] ?? 'N/A')
                 ];
             }
         }
@@ -355,19 +355,49 @@ usort($logs, function($a, $b) {
             <h3 style="margin-bottom: 20px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;">Audit History for OE: <?php echo htmlspecialchars($oe_pn); ?></h3>
             
             <?php foreach ($logs as $log): ?>
-                <div class="log-entry">
-                    <div class="log-header">
-                        <span class="<?php echo htmlspecialchars($log['action']); ?>">
-                            [<?php echo htmlspecialchars($log['action']); ?>]
-                        </span>
-                        <span><?php echo htmlspecialchars($log['timestamp']); ?> (User IP: <?php echo htmlspecialchars($log['changed_by']); ?>)</span>
-                    </div>
-                    <div class="log-body">
+                <div class="log-body">
                         <?php if ($log['action'] === 'CREATE'): ?>
-                            <p style="margin: 0; color: #5cb85c; font-weight: bold;">Initial record created in the database.</p>
+                            <p style="margin: 0 0 15px 0; color: #5cb85c; font-weight: bold;">Initial record created with the following data:</p>
+                            <table>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Value Entered</th>
+                                </tr>
+                                <?php 
+                                for ($i = 0; $i < count($columns); $i++) {
+                                    $val = $log['new_data'][$i] ?? '';
+                                    if ($val !== '') { // Only show fields that actually have data
+                                        echo "<tr>";
+                                        echo "<td><strong>{$columns[$i]}</strong></td>";
+                                        echo "<td class='new-val'>" . htmlspecialchars($val) . "</td>";
+                                        echo "</tr>";
+                                    }
+                                }
+                                ?>
+                            </table>
+
                         <?php elseif ($log['action'] === 'DELETE'): ?>
-                            <p style="margin: 0; color: #d9534f; font-weight: bold;">Record was completely deleted from the database.</p>
+                            <p style="margin: 0 0 15px 0; color: #d9534f; font-weight: bold;">Record was completely deleted. Final state before deletion:</p>
+                            <table>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Deleted Value</th>
+                                </tr>
+                                <?php 
+                                for ($i = 0; $i < count($columns); $i++) {
+                                    $val = $log['old_data'][$i] ?? '';
+                                    if ($val !== '') {
+                                        echo "<tr>";
+                                        echo "<td><strong>{$columns[$i]}</strong></td>";
+                                        echo "<td class='old-val'>" . htmlspecialchars($val) . "</td>";
+                                        echo "</tr>";
+                                    }
+                                }
+                                ?>
+                            </table>
+
                         <?php elseif ($log['action'] === 'UPDATE'): ?>
+                            <p style="margin: 0 0 15px 0; color: #0275d8; font-weight: bold;">The following fields were modified:</p>
                             <table>
                                 <tr>
                                     <th>Field</th>
@@ -375,11 +405,14 @@ usort($logs, function($a, $b) {
                                     <th>New Value</th>
                                 </tr>
                                 <?php 
+                                // Compare old and new arrays
+                                $changesFound = false;
                                 for ($i = 0; $i < count($columns); $i++) {
                                     $oldVal = $log['old_data'][$i] ?? '';
                                     $newVal = $log['new_data'][$i] ?? '';
                                     
                                     if ($oldVal !== $newVal) {
+                                        $changesFound = true;
                                         echo "<tr>";
                                         echo "<td><strong>{$columns[$i]}</strong></td>";
                                         echo "<td class='old-val'>" . htmlspecialchars($oldVal) . "</td>";
@@ -387,11 +420,13 @@ usort($logs, function($a, $b) {
                                         echo "</tr>";
                                     }
                                 }
+                                if (!$changesFound) {
+                                    echo "<tr><td colspan='3' style='text-align: center; color: #777;'>Form was saved, but no actual values were changed.</td></tr>";
+                                }
                                 ?>
                             </table>
                         <?php endif; ?>
                     </div>
-                </div>
             <?php endforeach; ?>
         <?php endif; ?>
     </div>
