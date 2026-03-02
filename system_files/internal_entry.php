@@ -14,6 +14,10 @@ if (isset($_GET['status']) && isset($_GET['oe'])) {
         $message = "<div class='success'>Success: Shock " . $safe_oe . " UPDATED!</div>";
     } elseif ($_GET['status'] === 'added') {
         $message = "<div class='success'>Success: New Shock " . $safe_oe . " ADDED!</div>";
+    } elseif ($_GET['status'] === 'deleted') {
+        $message = "<div class='success' style='background-color: #fff3cd; color: #856404; border-color: #ffeeba;'>Success: Shock " . $safe_oe . " DELETED!</div>";
+    } elseif ($_GET['status'] === 'not_found') {
+        $message = "<div class='error'>Error: Shock " . $safe_oe . " not found for deletion.</div>";
     }
 }
 
@@ -26,6 +30,7 @@ function clean_input($data) {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $oeNum = clean_input($_POST['oe_pn']);
+    $actionType = $_POST['form_action'] ?? 'save'; // Determine if saving or deleting.
     
     // Build the 33-column array exactly as the CSV expects
     $newRow = [
@@ -68,6 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $tempFile = $csvFile . '.tmp';
     $updated = false;
+    $status = '';
 
     if (($handle = fopen($csvFile, "r")) !== FALSE && ($tempHandle = fopen($tempFile, "w")) !== FALSE) {
         $headers = fgetcsv($handle);
@@ -75,29 +81,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         while (($data = fgetcsv($handle)) !== FALSE) {
             if (strcasecmp(trim($data[0]), $oeNum) === 0) {
-                fputcsv($tempHandle, $newRow);
-                $updated = true;
-
-                // --- MILESTONE 4: Log the UPDATE action ---
-                // $data is the old row from the CSV, $newRow is the new POST data
-                log_audit_action('Carver_Shocks_Database', $oeNum, 'UPDATE', $data, $newRow);
+                if ($actionType === 'delete') {
+                    // MILESTONE 4: Log the DELETE action and skip writing to temp file.
+                    log_audit_action('Carver_Shocks_Database', $oeNum, 'DELETE', $data, []);
+                    $updated = true;
+                    $status = 'deleted';
+                } else {
+                    // MILESTONE 4: Log the UPDATE action and write new row.
+                    fputcsv($tempHandle, $newRow);
+                    log_audit_action('Carver_Shocks_Database', $oeNum, 'UPDATE', $data, $newRow);
+                    $updated = true;
+                    $status = 'updated';
+                }
             } else {
                 fputcsv($tempHandle, $data);
             }
         }
         fclose($handle);
 
-        if (!$updated) {
+        if (!$updated && $actionType !== 'delete') {
             fputcsv($tempHandle, $newRow);
-
-            // --- MILESTONE 4: Log the CREATE action ---
-            // There is no old data, so we pass an empty array
+            // MILESTONE 4: Log the CREATE action.
             log_audit_action('Carver_Shocks_Database', $oeNum, 'CREATE', [], $newRow);
+            $status = 'added';
+        } elseif (!$updated && $actionType === 'delete') {
+            // Tried to delete a shock that doesn't exist.
+            $status = 'not_found';
         }
         fclose($tempHandle);
 
         if (rename($tempFile, $csvFile)) {
-            $status = $updated ? 'updated' : 'added';
             header("Location: " . $_SERVER['PHP_SELF'] . "?status=" . $status . "&oe=" . urlencode($oeNum));
             exit;
         } else {
@@ -258,7 +271,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </div>
 
-            <button type="submit" class="btn">Save / Overwrite Shock Entry</button>
+            <div style="display: flex; gap: 15px; margin-top: 20px;">
+                <button type="submit" name="form_action" value="save" class="btn" style="flex: 2;">Save / Overwrite Shock Entry</button>
+                <button type="submit" name="form_action" value="delete" class="btn" style="flex: 1; background-color: #6c757d;" onclick="return confirm('WARNING: Are you sure you want to completely DELETE this shock from the database?');">Delete Shock</button>
+            </div>
         </form>
 
         <script>
@@ -296,6 +312,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 
                 if (form) {
                     form.addEventListener('submit', function(event) {
+
+                        // MILESTONE 4: If the delete button was clicked, ignore the save validation!
+                        if (event.submitter && event.submitter.value === 'delete') {
+                            return; 
+                        }
+
                         const inputs = form.querySelectorAll('input[type="text"]:not([name="oe_pn"]), select');
                         let hasData = false;
 

@@ -38,6 +38,7 @@ function log_audit_action($tableName, $recordId, $action, $oldData = [], $newDat
     if ($handle) {
         $logId = uniqid('log_');
         $changedBy = $_SERVER['REMOTE_ADDR'] ?? 'Unknown IP';
+        date_default_timezone_set('America/Chicago');
         $timestamp = date('Y-m-d H:i:s');
 
         // Convert data arrays to JSON strings so they fit in a single CSV cell
