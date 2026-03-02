@@ -15,3 +15,6 @@ ReadMe.txt
 
 # Ignore any log files that may be generated.
 system_files/missing_skus.log
+
+# Ignore the audit logs, personal information should not be shared.
+system_files/audit_logs.csv

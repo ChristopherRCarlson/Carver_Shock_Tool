@@ -4,6 +4,9 @@
 $csvFile = __DIR__ . '/Carver_Shocks_Database.csv';
 $message = "";
 
+// --- MILESTONE 4: Include Audit Logger ---
+require_once __DIR__ . '/audit_logger.php';
+
 // Catch the redirect success messages
 if (isset($_GET['status']) && isset($_GET['oe'])) {
     $safe_oe = htmlspecialchars($_GET['oe']);
@@ -74,6 +77,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (strcasecmp(trim($data[0]), $oeNum) === 0) {
                 fputcsv($tempHandle, $newRow);
                 $updated = true;
+
+                // --- MILESTONE 4: Log the UPDATE action ---
+                // $data is the old row from the CSV, $newRow is the new POST data
+                log_audit_action('Carver_Shocks_Database', $oeNum, 'UPDATE', $data, $newRow);
             } else {
                 fputcsv($tempHandle, $data);
             }
@@ -82,6 +89,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (!$updated) {
             fputcsv($tempHandle, $newRow);
+
+            // --- MILESTONE 4: Log the CREATE action ---
+            // There is no old data, so we pass an empty array
+            log_audit_action('Carver_Shocks_Database', $oeNum, 'CREATE', [], $newRow);
         }
         fclose($tempHandle);
 
