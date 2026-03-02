@@ -68,7 +68,12 @@ if (file_exists($dbFile)) {
 
             <a href="system_files/internal_entry.php" class="nav-card">
                 <span>📥 DATA ENTRY</span>
-                <small>Add new shocks to DB</small>
+                <small>Add/Update shock information</small>
+            </a>
+
+            <a href="history.php" class="nav-card">
+                <span>📜 VIEW HISTORY</span>
+                <small>Search audit logs</small>
             </a>
         </div>
 
