@@ -13,8 +13,5 @@ Legacy/
 # Ignore Readme, only those within the company should know how to run the system.
 ReadMe.txt
 
-# Ignore Python Patch Script, it's used internally and not relevant to the web interface.
-patch_oe_numbers.py
-
 # Ignore any log files that may be generated.
 system_files/missing_skus.log
