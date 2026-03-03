@@ -115,9 +115,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (rename($tempFile, $csvFile)) {
             $safe_redirect = basename(__FILE__);
-
-            /** @psalm-suppress TaintedHeader */
             $header_str = "Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum);
+
+            /** @psalm-taint-escape header $header_str */
             header($header_str);
             exit;
         } else {
@@ -140,16 +140,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         h1 { border-bottom: 2px solid #d9534f; padding-bottom: 10px; color: #333; margin-top: 0; font-size: 1.8em; }
         .success { background-color: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #c3e6cb; }
         .error { background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin-bottom: 20px; border: 1px solid #f5c6cb; }
-        
+
         .form-section { border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; border-radius: 5px; background: #fafafa; }
         .form-section h3 { margin-top: 0; color: #d9534f; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 15px; }
-        
+
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
         .form-group { display: flex; flex-direction: column; }
         label { font-weight: 600; margin-bottom: 5px; font-size: 0.9em; color: #555; }
         input[type="text"], input[type="number"], select { padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; } /* Larger text for mobile taps */
         input[type="text"]:focus, select:focus { border-color: #d9534f; outline: none; box-shadow: 0 0 5px rgba(217, 83, 79, 0.2); }
-        
+
         .btn { background-color: #d9534f; color: white; border: none; padding: 15px 20px; font-size: 18px; border-radius: 4px; cursor: pointer; display: block; width: 100%; font-weight: bold; margin-top: 10px; }
         .btn:hover { background-color: #c9302c; }
 
@@ -171,21 +171,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             .container { box-shadow: none !important; margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; }
             h1 { font-size: 18pt !important; border-bottom: 3px solid black !important; }
             .print-header { display: block !important; text-align: right; font-weight: bold; border-bottom: 1px solid black; margin-bottom: 10px; font-size: 10pt; }
-            
+
             .form-section { border: 2px solid black !important; background: transparent !important; margin-bottom: 15px !important; padding: 10px !important; page-break-inside: avoid; }
             .form-section h3 { color: black !important; border-bottom: 2px solid black !important; margin-bottom: 10px !important; font-size: 12pt !important; }
-            
+
             .grid { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 10px !important; }
             .form-group { margin-bottom: 5px; }
             label { font-size: 9pt !important; text-transform: uppercase; color: #444 !important; }
-            
+
             /* Turn inputs into clean text on paper */
-            input[type="text"], select { 
-                border: none !important; 
-                border-bottom: 1px solid #000 !important; 
-                padding: 2px 0 !important; 
-                font-size: 11pt !important; 
-                font-weight: bold !important; 
+            input[type="text"], select {
+                border: none !important;
+                border-bottom: 1px solid #000 !important;
+                padding: 2px 0 !important;
+                font-size: 11pt !important;
+                font-weight: bold !important;
                 background: transparent !important;
                 -webkit-appearance: none;
                 appearance: none;
@@ -286,15 +286,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                
+
                 // --- 1. AUTO-FILL API LOGIC ---
                 const oeInput = document.getElementById('oe_pn');
-                
+
                 if (oeInput) {
                     oeInput.addEventListener('blur', function() {
                         const oeValue = this.value.trim();
                         if (oeValue === '') return;
-                        
+
                         fetch('api_check_duplicate.php?oe=' + encodeURIComponent(oeValue))
                             .then(response => response.json())
                             .then(result => {
@@ -303,7 +303,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                         const shockData = result.data || result;
                                         for (const [key, value] of Object.entries(shockData)) {
                                             const inputField = document.querySelector(`[name="${key}"]`);
-                                            if (inputField && key !== 'oe_pn') { 
+                                            if (inputField && key !== 'oe_pn') {
                                                 inputField.value = value || '';
                                             }
                                         }
@@ -316,13 +316,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 // --- 2. SUBMISSION SAFETY NET LOGIC ---
                 const form = document.getElementById('entryForm');
-                
+
                 if (form) {
                     form.addEventListener('submit', function(event) {
 
                         // MILESTONE 4: If the delete button was clicked, ignore the save validation!
                         if (event.submitter && event.submitter.value === 'delete') {
-                            return; 
+                            return;
                         }
 
                         const inputs = form.querySelectorAll('input[type="text"]:not([name="oe_pn"]), select');

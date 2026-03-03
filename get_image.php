@@ -26,6 +26,8 @@ if (!$sku || !preg_match('/^[a-zA-Z0-9\-\.\s_]+$/', $sku)) {
     send_404_image();
 }
 
+/** @psalm-taint-escape ssrf $sku */
+
 // 2. Cache Setup
 $cacheDir = __DIR__ . '/cache';
 $cacheTtl = 7 * 24 * 3600; // 7 days
