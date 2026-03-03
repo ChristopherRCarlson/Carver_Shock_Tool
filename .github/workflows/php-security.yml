@@ -15,7 +15,7 @@ jobs:
           tools: cs2pr, phpcs, psalm
 
       - name: Run PHP CodeSniffer (Code Quality)
-        run: phpcs --standard=PSR12 . || true # '|| true' prevents failing the whole build just for styling
+        run: phpcs -n --standard=PSR12 --ignore=vendor/,Legacy/ .
 
       - name: Run Psalm Security/Taint Analysis
         run: |

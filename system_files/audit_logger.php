@@ -7,7 +7,8 @@ define('AUDIT_LOG_FILE', __DIR__ . '/audit_logs.csv');
  * Initializes the audit log CSV if it doesn't exist and writes the header row.
  * This acts as our "Database Schema" for the audit trails.
  */
-function initializeAuditLog() {
+function initializeAuditLog()
+{
     if (!file_exists(AUDIT_LOG_FILE)) {
         $handle = fopen(AUDIT_LOG_FILE, 'w');
         if ($handle) {
@@ -31,7 +32,8 @@ function initializeAuditLog() {
  * Helper function to write a new entry to the audit log.
  * We will use this extensively in Issue 2!
  */
-function log_audit_action($tableName, $recordId, $action, $oldData = [], $newData = []) {
+function log_audit_action($tableName, $recordId, $action, $oldData = [], $newData = [])
+{
     initializeAuditLog(); // Ensure the file exists before writing
 
     $handle = fopen(AUDIT_LOG_FILE, 'a');
@@ -62,4 +64,3 @@ function log_audit_action($tableName, $recordId, $action, $oldData = [], $newDat
 
 // Automatically check/create the schema when this file is included
 initializeAuditLog();
-?>

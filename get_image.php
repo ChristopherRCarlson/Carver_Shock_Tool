@@ -1,4 +1,5 @@
 <?php
+
 /** @psalm-suppress TaintedSSRF */
 
 ini_set('display_errors', 0);
@@ -6,10 +7,11 @@ error_reporting(0);
 
 header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, HEAD");
-header("Access-Control-Expose-Headers: X-Cache"); 
+header("Access-Control-Expose-Headers: X-Cache");
 
 // The CORB Fix
-function send_404_image() {
+function send_404_image()
+{
     header("Content-Type: image/png");
     http_response_code(404);
     echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
@@ -29,7 +31,9 @@ if (!$sku || !preg_match('/^[a-zA-Z0-9\-\.\s_]+$/', $sku)) {
 // 2. Cache Setup
 $cacheDir = __DIR__ . '/cache';
 $cacheTtl = 7 * 24 * 3600; // 7 days
-if (!is_dir($cacheDir)) @mkdir($cacheDir, 0755, true);
+if (!is_dir($cacheDir)) {
+    @mkdir($cacheDir, 0755, true);
+}
 
 // 3. Probabilistic Cleanup
 if (function_exists('mt_rand') && mt_rand(1, 100) === 1) {
@@ -39,11 +43,19 @@ if (function_exists('mt_rand') && mt_rand(1, 100) === 1) {
     $dh = @opendir($cacheDir);
     if ($dh) {
         while (($f = readdir($dh)) !== false) {
-            if ($deleted >= $maxDeletes) break;
-            if ($f === '.' || $f === '..') continue;
+            if ($deleted >= $maxDeletes) {
+                break;
+            }
+            if ($f === '.' || $f === '..') {
+                continue;
+            }
             $path = $cacheDir . '/' . $f;
-            if (!is_file($path)) continue;
-            if (!preg_match('/\.(meta|img)$/', $f)) continue;
+            if (!is_file($path)) {
+                continue;
+            }
+            if (!preg_match('/\.(meta|img)$/', $f)) {
+                continue;
+            }
             $mtime = @filemtime($path) ?: 0;
             if ($now - $mtime > $cacheTtl) {
                 @unlink($path);
@@ -63,10 +75,10 @@ $imgFile = $cacheDir . '/' . $cacheKey . '.img';
 // ==========================================
 if (is_file($metaFile) && (time() - filemtime($metaFile) < $cacheTtl)) {
     $meta = json_decode(file_get_contents($metaFile), true);
-    
+
     if ($meta) {
-        header("X-Cache: HIT"); 
-        
+        header("X-Cache: HIT");
+
         if (empty($meta['exists'])) {
             send_404_image();
         }
@@ -82,8 +94,10 @@ if (is_file($metaFile) && (time() - filemtime($metaFile) < $cacheTtl)) {
             }
         }
 
-        if (!empty($meta['content_type'])) header("Content-Type: " . $meta['content_type']);
-        
+        if (!empty($meta['content_type'])) {
+            header("Content-Type: " . $meta['content_type']);
+        }
+
         if ($isHead) {
             http_response_code(200);
             exit;
@@ -91,7 +105,7 @@ if (is_file($metaFile) && (time() - filemtime($metaFile) < $cacheTtl)) {
 
         if (is_file($imgFile)) {
             header("Content-Length: " . filesize($imgFile));
-            readfile($imgFile); 
+            readfile($imgFile);
             exit;
         }
     }
@@ -100,7 +114,7 @@ if (is_file($metaFile) && (time() - filemtime($metaFile) < $cacheTtl)) {
 // ==========================================
 // SCRAPING (The "MISS" Phase)
 // ==========================================
-header("X-Cache: MISS"); 
+header("X-Cache: MISS");
 
 $badFiles = ['placeholder.jpg', 'blank.gif', 'spacer.gif'];
 $badFolders = ['/logo/', 'simplecms', 'common', '/skins/'];
@@ -124,11 +138,11 @@ if (stripos($html, '0 products found') !== false || stripos($html, 'no products 
         'timestamp' => time()
     ];
     @file_put_contents($metaFile, json_encode($meta));
-    
+
     send_404_image();
 }
 
-// IF WE MADE IT PAST THE TRAP, THE PRODUCT DEFINITIVELY EXISTS. 
+// IF WE MADE IT PAST THE TRAP, THE PRODUCT DEFINITIVELY EXISTS.
 
 $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 $isProductPage = (strpos($finalUrl, 'productid=') !== false || strpos($finalUrl, '.html') !== false) && strpos($finalUrl, 'target=search') === false;
@@ -136,10 +150,11 @@ $isProductPage = (strpos($finalUrl, 'productid=') !== false || strpos($finalUrl,
 // List-Jump Logic (Upgraded for X-Cart Clean URLs)
 if (!$isProductPage) {
     // Looks for X-Cart specific thumbnail/title links OR falls back to old logic
-    if (preg_match('/class=["\'][^"\']*(?:product-thumbnail|product-title)[^"\']*["\'][^>]*href=["\']([^"\']+)["\']/i', $html, $m) ||
+    if (
+        preg_match('/class=["\'][^"\']*(?:product-thumbnail|product-title)[^"\']*["\'][^>]*href=["\']([^"\']+)["\']/i', $html, $m) ||
         preg_match('/<a[^>]+href=["\']([^"\']+)["\'][^>]*class=["\'][^"\']*(?:product-thumbnail|product-title)[^"\']*["\']/i', $html, $m) ||
-        preg_match('/href=["\']((?:product\.php\?productid=|[^"\']+\.html)[^"\']*)["\']/i', $html, $m)) {
-        
+        preg_match('/href=["\']((?:product\.php\?productid=|[^"\']+\.html)[^"\']*)["\']/i', $html, $m)
+    ) {
         $firstResultUrl = $m[1];
         if (strpos($firstResultUrl, 'http') === false) {
             $firstResultUrl = "https://carverperformance.com/" . ltrim($firstResultUrl, '/');
@@ -147,7 +162,7 @@ if (!$isProductPage) {
 
         curl_setopt($ch, CURLOPT_URL, $firstResultUrl);
         $html = curl_exec($ch);
-        $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL); 
+        $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
         $isProductPage = true;
     }
 }
@@ -158,23 +173,23 @@ $foundUrl = null;
 // Image Extraction (Upgraded for WEBP)
 if (preg_match('/<img[^>]*class="[^"]*(?:product-image|product-photo|photo)[^"]*"[^>]*src="([^"]+)"/i', $html, $m)) {
     $foundUrl = $m[1];
-} 
-elseif ($isProductPage) {
+} elseif ($isProductPage) {
     if (preg_match('/class=["\'][^"\']*cloud-zoom[^"\']*["\'][^>]+href=["\']([^"\']+\.(jpg|jpeg|png|gif|webp))["\']/i', $html, $m)) {
         $foundUrl = $m[1];
-    } 
-    elseif (preg_match('/id=["\']product_image["\'][^>]+src=["\']([^"\']+\.(jpg|jpeg|png|gif|webp))["\']/i', $html, $m)) {
+    } elseif (preg_match('/id=["\']product_image["\'][^>]+src=["\']([^"\']+\.(jpg|jpeg|png|gif|webp))["\']/i', $html, $m)) {
         $foundUrl = $m[1];
     }
-} 
+}
 
 // Fallback Folder Extraction (Upgraded for X-Cart 5 /images/product)
 if (!$foundUrl && preg_match_all('/(?:var\/images|images\/product)\/[a-zA-Z0-9\._\-\/]+\.(jpg|jpeg|png|gif|webp)/i', $html, $matches)) {
     $candidates = array_unique($matches[0]);
     foreach ($candidates as $path) {
         $filename = basename($path);
-        if (in_array($filename, $badFiles)) continue;
-        
+        if (in_array($filename, $badFiles)) {
+            continue;
+        }
+
         $isTrash = false;
         foreach ($badFolders as $bad) {
             if (stripos($path, $bad) !== false) {
@@ -182,10 +197,12 @@ if (!$foundUrl && preg_match_all('/(?:var\/images|images\/product)\/[a-zA-Z0-9\.
                 break;
             }
         }
-        if ($isTrash) continue;
+        if ($isTrash) {
+            continue;
+        }
 
         $foundUrl = $path;
-        break; 
+        break;
     }
 }
 
@@ -217,7 +234,7 @@ if ($foundUrl) {
             'content_length' => curl_getinfo($ch_img, CURLINFO_CONTENT_LENGTH_DOWNLOAD) ?: null,
             'timestamp' => time()
         ];
-        
+
         // NEW: If the image link is broken but the product exists, override the failure!
         if (!$meta['exists']) {
             $meta['exists'] = true;
@@ -232,7 +249,9 @@ if ($foundUrl) {
         }
 
         if ($meta['exists']) {
-            if ($contentType) header("Content-Type: " . $contentType);
+            if ($contentType) {
+                header("Content-Type: " . $contentType);
+            }
             http_response_code(200);
             exit;
         }
@@ -277,4 +296,3 @@ if ($isHead) {
     header("Location: https://placehold.co/150x150?text=No+Photo"); // Keeps Kit Images active
     exit;
 }
-?>

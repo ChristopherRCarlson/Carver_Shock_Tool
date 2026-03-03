@@ -18,9 +18,9 @@ $columns = [
 
 if (!empty($oe_pn)) {
     $searched = true;
-    if (file_exists($logFile) && ($handle = fopen($logFile, "r")) !== FALSE) {
+    if (file_exists($logFile) && ($handle = fopen($logFile, "r")) !== false) {
         $headers = fgetcsv($handle); // Skip header row
-        while (($data = fgetcsv($handle)) !== FALSE) {
+        while (($data = fgetcsv($handle)) !== false) {
             // Check if record_id matches the requested OE
             if (isset($data[2]) && strcasecmp(trim($data[2]), $oe_pn) === 0) {
                 $logs[] = [
@@ -37,7 +37,7 @@ if (!empty($oe_pn)) {
 }
 
 // Sort logs by timestamp (Newest First)
-usort($logs, function($a, $b) {
+usort($logs, function ($a, $b) {
     return strtotime($b['timestamp']) - strtotime($a['timestamp']);
 });
 
@@ -347,23 +347,23 @@ usort($logs, function($a, $b) {
             </form>
         </div>
 
-        <?php if (!$searched): ?>
+        <?php if (!$searched) : ?>
             <div class="empty-state">Enter a shock OE P/N above to view its version history.</div>
-        <?php elseif (empty($logs)): ?>
+        <?php elseif (empty($logs)) : ?>
             <div class="empty-state">No version history found for OE: <strong><?php echo htmlspecialchars($oe_pn); ?></strong></div>
-        <?php else: ?>
+        <?php else : ?>
             <h3 style="margin-bottom: 20px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;">Audit History for OE: <?php echo htmlspecialchars($oe_pn); ?></h3>
             
-            <?php foreach ($logs as $log): ?>
+            <?php foreach ($logs as $log) : ?>
                 <div class="log-body">
-                        <?php if ($log['action'] === 'CREATE'): ?>
+                        <?php if ($log['action'] === 'CREATE') : ?>
                             <p style="margin: 0 0 15px 0; color: #5cb85c; font-weight: bold;">Initial record created with the following data:</p>
                             <table>
                                 <tr>
                                     <th>Field</th>
                                     <th>Value Entered</th>
                                 </tr>
-                                <?php 
+                                <?php
                                 for ($i = 0; $i < count($columns); $i++) {
                                     $val = $log['new_data'][$i] ?? '';
                                     if ($val !== '') { // Only show fields that actually have data
@@ -376,14 +376,14 @@ usort($logs, function($a, $b) {
                                 ?>
                             </table>
 
-                        <?php elseif ($log['action'] === 'DELETE'): ?>
+                        <?php elseif ($log['action'] === 'DELETE') : ?>
                             <p style="margin: 0 0 15px 0; color: #d9534f; font-weight: bold;">Record was completely deleted. Final state before deletion:</p>
                             <table>
                                 <tr>
                                     <th>Field</th>
                                     <th>Deleted Value</th>
                                 </tr>
-                                <?php 
+                                <?php
                                 for ($i = 0; $i < count($columns); $i++) {
                                     $val = $log['old_data'][$i] ?? '';
                                     if ($val !== '') {
@@ -396,7 +396,7 @@ usort($logs, function($a, $b) {
                                 ?>
                             </table>
 
-                        <?php elseif ($log['action'] === 'UPDATE'): ?>
+                        <?php elseif ($log['action'] === 'UPDATE') : ?>
                             <p style="margin: 0 0 15px 0; color: #0275d8; font-weight: bold;">The following fields were modified:</p>
                             <table>
                                 <tr>
@@ -404,13 +404,13 @@ usort($logs, function($a, $b) {
                                     <th>Old Value</th>
                                     <th>New Value</th>
                                 </tr>
-                                <?php 
+                                <?php
                                 // Compare old and new arrays
                                 $changesFound = false;
                                 for ($i = 0; $i < count($columns); $i++) {
                                     $oldVal = $log['old_data'][$i] ?? '';
                                     $newVal = $log['new_data'][$i] ?? '';
-                                    
+
                                     if ($oldVal !== $newVal) {
                                         $changesFound = true;
                                         echo "<tr>";

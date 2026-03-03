@@ -1,5 +1,7 @@
 <?php
+
 /** @psalm-suppress TaintedHeader */
+
 // internal_entry.php - V6.4 (Schema v3.0 - 35 Columns, Unified UI & Mobile Optimized)
 
 $csvFile = __DIR__ . '/Carver_Shocks_Database.csv';
@@ -23,16 +25,19 @@ if (isset($_GET['status']) && isset($_GET['oe'])) {
 }
 
 // Helper: Sanitizer
-function clean_input($data) {
+function clean_input($data)
+{
     $val = trim($data ?? '');
-    if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) return '';
+    if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) {
+        return '';
+    }
     return $val;
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $oeNum = clean_input($_POST['oe_pn']);
     $actionType = $_POST['form_action'] ?? 'save'; // Determine if saving or deleting.
-    
+
     // Build the 33-column array exactly as the CSV expects
     $newRow = [
         $oeNum,
@@ -76,11 +81,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $updated = false;
     $status = '';
 
-    if (($handle = fopen($csvFile, "r")) !== FALSE && ($tempHandle = fopen($tempFile, "w")) !== FALSE) {
+    if (($handle = fopen($csvFile, "r")) !== false && ($tempHandle = fopen($tempFile, "w")) !== false) {
         $headers = fgetcsv($handle);
-        fputcsv($tempHandle, $headers); 
+        fputcsv($tempHandle, $headers);
 
-        while (($data = fgetcsv($handle)) !== FALSE) {
+        while (($data = fgetcsv($handle)) !== false) {
             if (strcasecmp(trim($data[0]), $oeNum) === 0) {
                 if ($actionType === 'delete') {
                     // MILESTONE 4: Log the DELETE action and skip writing to temp file.

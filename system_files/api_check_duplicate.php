@@ -1,4 +1,5 @@
 <?php
+
 // api_check_duplicate.php
 
 header('Content-Type: application/json');
@@ -20,17 +21,17 @@ if (empty($searchOE)) {
 $found = false;
 $data = [];
 
-if (($handle = fopen($csvFile, "r")) !== FALSE) {
+if (($handle = fopen($csvFile, "r")) !== false) {
     $headers = fgetcsv($handle);
-    
+
     // Clean headers to ensure perfect matching
     $headers = array_map('trim', $headers);
-    
-    while (($row = fgetcsv($handle)) !== FALSE) {
+
+    while (($row = fgetcsv($handle)) !== false) {
         // Check if the first column (OE P/N) matches what was typed
         if (strcasecmp(trim($row[0]), trim($searchOE)) === 0) {
             $found = true;
-            
+
             // Map the CSV headers directly to the row values
             foreach ($headers as $index => $colName) {
                 if (!empty($colName) && isset($row[$index])) {
@@ -48,4 +49,3 @@ if ($found) {
 } else {
     echo json_encode(['success' => false]);
 }
-?>

@@ -1,4 +1,5 @@
 <?php
+
 $sku = '11-02448';
 $url = "https://carverperformance.com/?target=search&mode=search&substring=" . urlencode($sku) . "&including=all&by_sku=Y&by_title=Y";
 
@@ -37,4 +38,3 @@ foreach ($all_imgs[0] as $img) {
 if (!$found) {
     echo "WARNING: Could not find ANY product-related <img> tags. X-Cart might be using Javascript to load them.\n";
 }
-?>

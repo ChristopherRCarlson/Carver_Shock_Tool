@@ -4,7 +4,8 @@
 $csvFile = 'system_files/Carver_Shocks_Database.csv';
 
 // 1. Standard Sanitizer (For non-linked text like Description/Headers)
-function display_clean($data) {
+function display_clean($data)
+{
     $val = trim($data ?? '');
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) {
         return '<span class="empty">-</span>';
@@ -13,17 +14,18 @@ function display_clean($data) {
 }
 
 // 2. NEW: Linked Sanitizer (For searchable parts)
-function display_linked_part($data) {
+function display_linked_part($data)
+{
     $val = trim($data ?? '');
-    
+
     // Clean and check for empty
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val) || $val === '') {
         return '<span class="empty">-</span>';
     }
-    
+
     // Create the Carver Store Search URL
     $url = "https://www.carverperformance.com/cart.php?target=search&substring=" . urlencode($val);
-    
+
     // Return the clickable link (marked for validation)
     return '<a href="' . $url . '" target="_blank" class="part-link validate-part" data-sku="' . htmlspecialchars($val) . '">' . htmlspecialchars($val) . '</a>';
 }
@@ -31,9 +33,9 @@ function display_linked_part($data) {
 $search = $_GET['search'] ?? '';
 $results = [];
 
-if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
+if ($search && ($handle = fopen($csvFile, "r")) !== false) {
     $headers = fgetcsv($handle);
-    while (($data = fgetcsv($handle, 1000, ",")) !== FALSE) {
+    while (($data = fgetcsv($handle, 1000, ",")) !== false) {
         $found = false;
         foreach ($data as $col) {
             if (stripos($col, $search) !== false) {
@@ -510,18 +512,18 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                 </form>
             </div>
 
-            <?php if ($search && empty($results)): ?>
+            <?php if ($search && empty($results)) : ?>
                 <div style="text-align:center; padding: 20px; color: #666;">
                     No results found for "<strong><?= htmlspecialchars($search) ?></strong>".<br>
                     Try entering part of the number (e.g., "51400" or "932-10").
                 </div>
             <?php endif; ?>
 
-            <?php if (!empty($results)): ?>
-                <?php foreach ($results as $row): 
+            <?php if (!empty($results)) : ?>
+                <?php foreach ($results as $row) :
                     // Ensure row has exactly 35 columns before referencing them
                     $row = array_pad($row, 35, '');
-                ?>
+                    ?>
                     <div class="result-card">
                         <div class="result-header">
                             <div class="result-header" style="position: relative;">
@@ -533,19 +535,27 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                                 <div style="color: #666; font-size: 1.1em;">Shock P/N: <strong><?= display_clean($row[1]) ?></strong></div>
                                 
                                 <div style="margin-top:5px; font-style: italic; color: #000;">
-                                    <?php 
+                                    <?php
                                         // Combine specific details logically
                                         $desc_parts = [];
-                                        if (trim($row[2])) $desc_parts[] = "Use: " . trim($row[2]);
-                                        if (trim($row[3])) $desc_parts[] = "Position: " . trim($row[3]);
-                                        if (trim($row[6])) $desc_parts[] = "IFP: " . trim($row[6]);
-                                        if (trim($row[7])) $desc_parts[] = "Nitrogen: " . trim($row[7]) . " PSI";
-                                        
-                                        if (empty($desc_parts)) {
-                                            echo '<span class="empty">-</span>';
-                                        } else {
-                                            echo htmlspecialchars(implode(" | ", $desc_parts));
-                                        }
+                                    if (trim($row[2])) {
+                                        $desc_parts[] = "Use: " . trim($row[2]);
+                                    }
+                                    if (trim($row[3])) {
+                                        $desc_parts[] = "Position: " . trim($row[3]);
+                                    }
+                                    if (trim($row[6])) {
+                                        $desc_parts[] = "IFP: " . trim($row[6]);
+                                    }
+                                    if (trim($row[7])) {
+                                        $desc_parts[] = "Nitrogen: " . trim($row[7]) . " PSI";
+                                    }
+
+                                    if (empty($desc_parts)) {
+                                        echo '<span class="empty">-</span>';
+                                    } else {
+                                        echo htmlspecialchars(implode(" | ", $desc_parts));
+                                    }
                                     ?>
                                 </div>
                             </div>
@@ -554,27 +564,27 @@ if ($search && ($handle = fopen($csvFile, "r")) !== FALSE) {
                         <?php
                             // Process Rebuild Kit Image
                             $rebuild_sku = trim($row[4] ?? '');
-                            if (!$rebuild_sku || $rebuild_sku === '-' || strtoupper($rebuild_sku) === 'N/A') {
-                                $rebuild_initial = "https://placehold.co/150x150/f4f4f4/888888?text=No+SKU";
-                                $rebuild_data_src = ""; 
-                                $rebuild_data = ""; 
-                            } else {
-                                $rebuild_initial = "https://placehold.co/150x150/f4f4f4/888888?text=Loading...";
-                                $rebuild_data_src = "https://carverperformance.com/get_image.php?sku=" . urlencode($rebuild_sku);
-                                $rebuild_data = htmlspecialchars($rebuild_sku);
-                            }
+                        if (!$rebuild_sku || $rebuild_sku === '-' || strtoupper($rebuild_sku) === 'N/A') {
+                            $rebuild_initial = "https://placehold.co/150x150/f4f4f4/888888?text=No+SKU";
+                            $rebuild_data_src = "";
+                            $rebuild_data = "";
+                        } else {
+                            $rebuild_initial = "https://placehold.co/150x150/f4f4f4/888888?text=Loading...";
+                            $rebuild_data_src = "https://carverperformance.com/get_image.php?sku=" . urlencode($rebuild_sku);
+                            $rebuild_data = htmlspecialchars($rebuild_sku);
+                        }
 
                             // Process Service Kit Image
                             $service_sku = trim($row[5] ?? '');
-                            if (!$service_sku || $service_sku === '-' || strtoupper($service_sku) === 'N/A') {
-                                $service_initial = "https://placehold.co/150x150/f4f4f4/888888?text=No+SKU";
-                                $service_data_src = ""; 
-                                $service_data = ""; 
-                            } else {
-                                $service_initial = "https://placehold.co/150x150/f4f4f4/888888?text=Loading...";
-                                $service_data_src = "https://carverperformance.com/get_image.php?sku=" . urlencode($service_sku);
-                                $service_data = htmlspecialchars($service_sku);
-                            }
+                        if (!$service_sku || $service_sku === '-' || strtoupper($service_sku) === 'N/A') {
+                            $service_initial = "https://placehold.co/150x150/f4f4f4/888888?text=No+SKU";
+                            $service_data_src = "";
+                            $service_data = "";
+                        } else {
+                            $service_initial = "https://placehold.co/150x150/f4f4f4/888888?text=Loading...";
+                            $service_data_src = "https://carverperformance.com/get_image.php?sku=" . urlencode($service_sku);
+                            $service_data = htmlspecialchars($service_sku);
+                        }
                         ?>
 
                         <div class="maintenance-section">

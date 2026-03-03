@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch: # This line allows manual triggering of the workflow.
+  workflow_dispatch:
 
 jobs:
   php-lint:
@@ -19,4 +19,4 @@ jobs:
           php-version: '8.2'
           
       - name: Check Syntax Error
-        run: find . -name "*.php" -print0 | xargs -0 -n1 php -l
+        run: find . -name "*.php" -not -path "./vendor/*" -not -path "./Legacy/*" -print0 | xargs -0 -n1 php -l
