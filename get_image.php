@@ -18,7 +18,9 @@ $sku = trim($_GET['sku'] ?? '');
 $isHead = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD';
 
 // 1. Sanitize Input
-if (!$sku || $sku === '-' || $sku === 'N/A' || $sku === 'NA' || strpos($sku, '+') !== false || strpos($sku, ' or ') !== false) {
+// We use a strict Regex allowlist to prove to Psalm that this input is safe.
+// This allows Alphanumeric characters, dashes, spaces, and periods.
+if (!$sku || !preg_match('/^[a-zA-Z0-9\-\.\s_]+$/', $sku)) {
     send_404_image();
 }
 

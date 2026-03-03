@@ -111,7 +111,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         fclose($tempHandle);
 
         if (rename($tempFile, $csvFile)) {
-            header("Location: " . $_SERVER['PHP_SELF'] . "?status=" . $status . "&oe=" . urlencode($oeNum));
+            // FIX: Use basename(__FILE__) instead of $_SERVER['PHP_SELF']
+            $safe_redirect = basename(__FILE__);
+            header("Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum));
             exit;
         } else {
             $message = "<div class='error'>Error: Could not replace the database file. Check permissions.</div>";
