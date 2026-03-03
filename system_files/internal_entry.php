@@ -115,7 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if (rename($tempFile, $csvFile)) {
             $safe_redirect = basename(__FILE__);
-            
+
             /** @psalm-suppress TaintedHeader */
             $header_str = "Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum);
             header($header_str);
