@@ -14,10 +14,11 @@ jobs:
           php-version: '8.2'
           tools: cs2pr, phpcs, psalm
 
+      - name: Install Dependencies
+        run: composer install --no-progress --prefer-dist
+
       - name: Run PHP CodeSniffer (Code Quality)
         run: phpcs -n --standard=PSR12 --ignore=vendor/,Legacy/ .
 
       - name: Run Psalm Security/Taint Analysis
-        run: |
-          psalm --init . 
-          psalm --taint-analysis
+        run: vendor/bin/psalm --taint-analysis
