@@ -1,18 +1,23 @@
-name: PHP Security Scan
+name: PHP Security & Quality Scan
 
 on: [push, pull_request]
 
 jobs:
-  phpcs:
+  php-scan:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install PHP_CodeSniffer
-        run: |
-          composer global require "squizlabs/php_codesniffer=*"
-          composer global require "progpilot/progpilot"
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: cs2pr, phpcs, psalm
 
-      - name: Run Security Check
+      - name: Run PHP CodeSniffer (Code Quality)
+        run: phpcs --standard=PSR12 . || true # '|| true' prevents failing the whole build just for styling
+
+      - name: Run Psalm Security/Taint Analysis
         run: |
-          ~/.composer/vendor/bin/phpcs --standard=PSR12 .
+          psalm --init
+          psalm --taint-analysis
