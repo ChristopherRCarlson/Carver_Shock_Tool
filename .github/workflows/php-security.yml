@@ -19,5 +19,5 @@ jobs:
 
       - name: Run Psalm Security/Taint Analysis
         run: |
-          psalm --init
+          psalm --init . 
           psalm --taint-analysis
