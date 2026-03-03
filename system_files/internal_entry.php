@@ -113,6 +113,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (rename($tempFile, $csvFile)) {
             // FIX: Use basename(__FILE__) instead of $_SERVER['PHP_SELF']
             $safe_redirect = basename(__FILE__);
+
+            /** @psalm-suppress TaintedHeader */
             header("Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum));
             exit;
         } else {

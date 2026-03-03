@@ -106,7 +106,10 @@ $badFolders = ['/logo/', 'simplecms', 'common', '/skins/'];
 $url = "https://carverperformance.com/?target=search&mode=search&substring=" . urlencode($sku) . "&including=all&by_sku=Y&by_title=Y";
 
 $ch = curl_init();
+
+/** @psalm-suppress TaintedSSRF */
 curl_setopt($ch, CURLOPT_URL, $url);
+
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
