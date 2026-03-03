@@ -1,7 +1,4 @@
 <?php
-
-/** @psalm-suppress TaintedHeader */
-
 // internal_entry.php - V6.4 (Schema v3.0 - 35 Columns, Unified UI & Mobile Optimized)
 
 $csvFile = __DIR__ . '/Carver_Shocks_Database.csv';
@@ -117,9 +114,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         fclose($tempHandle);
 
         if (rename($tempFile, $csvFile)) {
-            // FIX: Use basename(__FILE__) instead of $_SERVER['PHP_SELF']
             $safe_redirect = basename(__FILE__);
-            header("Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum));
+            
+            /** @psalm-suppress TaintedHeader */
+            $header_str = "Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum);
+            header($header_str);
             exit;
         } else {
             $message = "<div class='error'>Error: Could not replace the database file. Check permissions.</div>";

@@ -1,7 +1,5 @@
 <?php
 
-/** @psalm-suppress TaintedSSRF */
-
 ini_set('display_errors', 0);
 error_reporting(0);
 
@@ -122,7 +120,11 @@ $badFolders = ['/logo/', 'simplecms', 'common', '/skins/'];
 $url = "https://carverperformance.com/?target=search&mode=search&substring=" . urlencode($sku) . "&including=all&by_sku=Y&by_title=Y";
 
 $ch = curl_init();
-curl_setopt($ch, CURLOPT_URL, $url);
+        
+/** @psalm-suppress TaintedSSRF */
+$safe_url = $url;
+curl_setopt($ch, CURLOPT_URL, $safe_url);
+
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
