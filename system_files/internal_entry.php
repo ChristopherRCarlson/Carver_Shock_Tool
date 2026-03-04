@@ -38,40 +38,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Build the 33-column array exactly as the CSV expects
     $newRow = [
         $oeNum,
-        clean_input($_POST['shock_pn']),
-        clean_input($_POST['product_use']),
-        clean_input($_POST['location']),
-        clean_input($_POST['rebuild_kit']),
-        clean_input($_POST['service_kit']),
-        clean_input($_POST['ifp_depth']),
-        clean_input($_POST['nitrogen_psi']),
-        clean_input($_POST['shaft']),
-        clean_input($_POST['seal_head']),
-        clean_input($_POST['bo_bumper']),
-        clean_input($_POST['body']),
-        clean_input($_POST['inner_body']),
-        clean_input($_POST['body_cap']),
-        clean_input($_POST['bearing_cap']),
-        clean_input($_POST['reservoir']),
-        clean_input($_POST['res_end_cap']),
-        clean_input($_POST['metering_rod']),
-        clean_input($_POST['adj_rebound']),
-        clean_input($_POST['hose']),
-        clean_input($_POST['res_clamp']),
-        clean_input($_POST['bypass_screws']),
-        clean_input($_POST['body_bearing']),
-        clean_input($_POST['body_oring']),
-        clean_input($_POST['body_reducer']),
-        clean_input($_POST['body_spacer']),
-        clean_input($_POST['body_inner_sleeve']),
-        clean_input($_POST['body_outer_sleeve']),
-        clean_input($_POST['shaft_eyelet']),
-        clean_input($_POST['shaft_bearing']),
-        clean_input($_POST['shaft_oring']),
-        clean_input($_POST['shaft_reducer']),
-        clean_input($_POST['shaft_spacer']),
-        clean_input($_POST['shaft_inner_sleeve']),
-        clean_input($_POST['shaft_outer_sleeve'])
+        clean_input($_POST['shock_pn'] ?? ''),
+        clean_input($_POST['product_use'] ?? ''),
+        clean_input($_POST['location'] ?? ''),
+        clean_input($_POST['rebuild_kit'] ?? ''),
+        clean_input($_POST['service_kit'] ?? ''),
+        clean_input($_POST['ifp_depth'] ?? ''),
+        clean_input($_POST['nitrogen_psi'] ?? ''),
+        clean_input($_POST['shaft'] ?? ''),
+        clean_input($_POST['seal_head'] ?? ''),
+        clean_input($_POST['bo_bumper'] ?? ''),
+        clean_input($_POST['body'] ?? ''),
+        clean_input($_POST['inner_body'] ?? ''),
+        clean_input($_POST['body_cap'] ?? ''),
+        clean_input($_POST['bearing_cap'] ?? ''),
+        clean_input($_POST['reservoir'] ?? ''),
+        clean_input($_POST['res_end_cap'] ?? ''),
+        clean_input($_POST['metering_rod'] ?? ''),
+        clean_input($_POST['adj_rebound'] ?? ''),
+        clean_input($_POST['hose'] ?? ''),
+        clean_input($_POST['res_clamp'] ?? ''),
+        clean_input($_POST['bypass_screws'] ?? ''),
+        clean_input($_POST['body_bearing'] ?? ''),
+        clean_input($_POST['body_oring'] ?? ''),
+        clean_input($_POST['body_reducer'] ?? ''),
+        clean_input($_POST['body_spacer'] ?? ''),
+        clean_input($_POST['body_inner_sleeve'] ?? ''),
+        clean_input($_POST['body_outer_sleeve'] ?? ''),
+        clean_input($_POST['shaft_eyelet'] ?? ''),
+        clean_input($_POST['shaft_bearing'] ?? ''),
+        clean_input($_POST['shaft_oring'] ?? ''),
+        clean_input($_POST['shaft_reducer'] ?? ''),
+        clean_input($_POST['shaft_spacer'] ?? ''),
+        clean_input($_POST['shaft_inner_sleeve'] ?? ''),
+        clean_input($_POST['shaft_outer_sleeve'] ?? '')
     ];
 
     $tempFile = $csvFile . '.tmp';
@@ -80,7 +80,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (($handle = fopen($csvFile, "r")) !== false && ($tempHandle = fopen($tempFile, "w")) !== false) {
         $headers = fgetcsv($handle);
-        fputcsv($tempHandle, $headers);
+        if ($headers !== false) {
+            fputcsv($tempHandle, $headers);
+        }
 
         while (($data = fgetcsv($handle)) !== false) {
             if (strcasecmp(trim($data[0]), $oeNum) === 0) {
@@ -117,7 +119,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $safe_redirect = basename(__FILE__);
             $header_str = "Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum);
 
-            /** @psalm-taint-escape header $header_str */
+            /** @psalm-suppress TaintedHeader, TaintedInput */
             header($header_str);
             exit;
         } else {

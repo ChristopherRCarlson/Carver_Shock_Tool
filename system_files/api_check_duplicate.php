@@ -24,23 +24,27 @@ $data = [];
 if (($handle = fopen($csvFile, "r")) !== false) {
     $headers = fgetcsv($handle);
 
-    // Clean headers to ensure perfect matching
-    $headers = array_map('trim', $headers);
+    // 1. Tell Psalm: "Only do this if the file wasn't completely empty"
+    if ($headers !== false) {
+        // Clean headers to ensure perfect matching
+        $headers = array_map('trim', $headers);
 
-    while (($row = fgetcsv($handle)) !== false) {
-        // Check if the first column (OE P/N) matches what was typed
-        if (strcasecmp(trim($row[0]), trim($searchOE)) === 0) {
-            $found = true;
+        while (($row = fgetcsv($handle)) !== false) {
+            // 2. Tell Psalm: "Only check this if row[0] actually exists (prevents blank line errors)"
+            if (isset($row[0]) && strcasecmp(trim($row[0]), trim($searchOE)) === 0) {
+                $found = true;
 
-            // Map the CSV headers directly to the row values
-            foreach ($headers as $index => $colName) {
-                if (!empty($colName) && isset($row[$index])) {
-                    $data[$colName] = trim($row[$index]);
+                // Map the CSV headers directly to the row values
+                foreach ($headers as $index => $colName) {
+                    if (!empty($colName) && isset($row[$index])) {
+                        $data[$colName] = trim($row[$index]);
+                    }
                 }
+                break; // Stop searching once we find the match
             }
-            break; // Stop searching once we find the match
         }
-    }
+    } // End of the if ($headers !== false) check
+
     fclose($handle);
 }
 
