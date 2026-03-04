@@ -122,6 +122,12 @@ $badFolders = ['/logo/', 'simplecms', 'common', '/skins/'];
 $url = "https://carverperformance.com/?target=search&mode=search&substring=" . urlencode($sku) . "&including=all&by_sku=Y&by_title=Y";
 
 $ch = curl_init();
+
+// Prove to Psalm that the URL strictly goes to your domain
+if (strpos($url, 'https://carverperformance.com/') !== 0) {
+    send_404_image();
+}
+
 /** @psalm-taint-escape ssrf $url */
 curl_setopt($ch, CURLOPT_URL, $url);
 
