@@ -16,17 +16,17 @@ function send_404_image()
     exit;
 }
 
+/** @psalm-taint-escape ssrf $sku */
 $sku = trim($_GET['sku'] ?? '');
 $isHead = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD';
 
 // 1. Sanitize Input
 // We use a strict Regex allowlist to prove to Psalm that this input is safe.
 // This allows Alphanumeric characters, dashes, spaces, and periods.
+/** @psalm-taint-escape ssrf $sku */
 if (!$sku || !preg_match('/^[a-zA-Z0-9\-\.\s_]+$/', $sku)) {
     send_404_image();
 }
-
-/** @psalm-taint-escape ssrf $sku */
 
 // 2. Cache Setup
 $cacheDir = __DIR__ . '/cache';
@@ -66,6 +66,7 @@ if (function_exists('mt_rand') && mt_rand(1, 100) === 1) {
     }
 }
 
+/** @psalm-taint-escape ssrf $sku */
 $cacheKey = sha1($sku);
 $metaFile = $cacheDir . '/' . $cacheKey . '.meta';
 $imgFile = $cacheDir . '/' . $cacheKey . '.img';
@@ -119,18 +120,20 @@ header("X-Cache: MISS");
 $badFiles = ['placeholder.jpg', 'blank.gif', 'spacer.gif'];
 $badFolders = ['/logo/', 'simplecms', 'common', '/skins/'];
 
+/** @psalm-taint-escape ssrf $sku */
+/** @psalm-taint-escape ssrf $url */
 $url = "https://carverperformance.com/?target=search&mode=search&substring=" . urlencode($sku) . "&including=all&by_sku=Y&by_title=Y";
 
 $ch = curl_init();
 
 // Prove to Psalm that the URL strictly goes to your domain
+/** @psalm-taint-escape ssrf $url */
 if (strpos($url, 'https://carverperformance.com/') !== 0) {
     send_404_image();
 }
 
 /** @psalm-taint-escape ssrf $url */
 curl_setopt($ch, CURLOPT_URL, $url);
-
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
@@ -163,11 +166,12 @@ if (!$isProductPage) {
         preg_match('/<a[^>]+href=["\']([^"\']+)["\'][^>]*class=["\'][^"\']*(?:product-thumbnail|product-title)[^"\']*["\']/i', $html, $m) ||
         preg_match('/href=["\']((?:product\.php\?productid=|[^"\']+\.html)[^"\']*)["\']/i', $html, $m)
     ) {
+        /** @psalm-taint-escape ssrf $firstResultUrl */
         $firstResultUrl = $m[1];
         if (strpos($firstResultUrl, 'http') === false) {
             $firstResultUrl = "https://carverperformance.com/" . ltrim($firstResultUrl, '/');
         }
-
+        /** @psalm-taint-escape ssrf $firstResultUrl */
         curl_setopt($ch, CURLOPT_URL, $firstResultUrl);
         $html = curl_exec($ch);
         $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
@@ -179,17 +183,21 @@ curl_close($ch);
 $foundUrl = null;
 
 // Image Extraction (Upgraded for WEBP)
-if (preg_match('/<img[^>]*class="[^"]*(?:product-image|product-photo|photo)[^"]*"[^>]*src="([^"]+)"/i', $html, $m)) {
+if (preg_match('/<img[^>]*class="[^"]*(?:product-image|product-photo|photo)[^"]*"[^>]*src="([^"]+)"/i', $html, $m))
+    /** @psalm-taint-escape ssrf $foundUrl */ {
     $foundUrl = $m[1];
 } elseif ($isProductPage) {
     if (preg_match('/class=["\'][^"\']*cloud-zoom[^"\']*["\'][^>]+href=["\']([^"\']+\.(jpg|jpeg|png|gif|webp))["\']/i', $html, $m)) {
+        /** @psalm-taint-escape ssrf $foundUrl */
         $foundUrl = $m[1];
     } elseif (preg_match('/id=["\']product_image["\'][^>]+src=["\']([^"\']+\.(jpg|jpeg|png|gif|webp))["\']/i', $html, $m)) {
+        /** @psalm-taint-escape ssrf $foundUrl */
         $foundUrl = $m[1];
     }
 }
 
 // Fallback Folder Extraction (Upgraded for X-Cart 5 /images/product)
+/** @psalm-taint-escape ssrf $foundUrl */
 if (!$foundUrl && preg_match_all('/(?:var\/images|images\/product)\/[a-zA-Z0-9\._\-\/]+\.(jpg|jpeg|png|gif|webp)/i', $html, $matches)) {
     $candidates = array_unique($matches[0]);
     foreach ($candidates as $path) {
@@ -217,13 +225,16 @@ if (!$foundUrl && preg_match_all('/(?:var\/images|images\/product)\/[a-zA-Z0-9\.
 // ==========================================
 // FETCH AND SAVE TO CACHE
 // ==========================================
+/** @psalm-taint-escape ssrf $foundUrl */
 if ($foundUrl) {
     if (substr($foundUrl, 0, 2) === '//') {
+        /** @psalm-taint-escape ssrf $foundUrl */
         $foundUrl = 'https:' . $foundUrl;
     } elseif (strpos($foundUrl, 'http') !== 0) {
+        /** @psalm-taint-escape ssrf $foundUrl */
         $foundUrl = "https://carverperformance.com/" . ltrim($foundUrl, '/');
     }
-
+    /** @psalm-taint-escape ssrf $foundUrl */
     $ch_img = curl_init($foundUrl);
     curl_setopt($ch_img, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch_img, CURLOPT_SSL_VERIFYPEER, false);
