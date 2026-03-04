@@ -183,9 +183,8 @@ curl_close($ch);
 $foundUrl = null;
 
 // Image Extraction (Upgraded for WEBP)
-if (preg_match('/<img[^>]*class="[^"]*(?:product-image|product-photo|photo)[^"]*"[^>]*src="([^"]+)"/i', $html, $m))
-    /** @psalm-taint-escape ssrf $foundUrl */ {
-    $foundUrl = $m[1];
+if (preg_match('/<img[^>]*class="[^"]*(?:product-image|product-photo|photo)[^"]*"[^>]*src="([^"]+)"/i', $html, $m)) {
+    /** @psalm-taint-escape ssrf $foundUrl */ $foundUrl = $m[1];
 } elseif ($isProductPage) {
     if (preg_match('/class=["\'][^"\']*cloud-zoom[^"\']*["\'][^>]+href=["\']([^"\']+\.(jpg|jpeg|png|gif|webp))["\']/i', $html, $m)) {
         /** @psalm-taint-escape ssrf $foundUrl */
