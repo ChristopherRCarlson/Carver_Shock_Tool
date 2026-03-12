@@ -155,6 +155,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .btn { background-color: #d9534f; color: white; border: none; padding: 15px 20px; font-size: 18px; border-radius: 4px; cursor: pointer; display: block; width: 100%; font-weight: bold; margin-top: 10px; }
         .btn:hover { background-color: #c9302c; }
 
+        .btn-clear { background-color: #f0ad4e; color: white; }
+        .btn-clear:hover { background-color: #ec971f; }
+
+        .btn-delete { background-color: #6c757d; color: white; }
+        .btn-delete:hover { background-color: #5a6268; }
+
         /* --- MOBILE OPTIMIZATIONS --- */
         @media (max-width: 700px) {
             .container { margin: 10px; padding: 20px; width: auto; }
@@ -282,7 +288,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <div style="display: flex; gap: 15px; margin-top: 20px;">
                 <button type="submit" name="form_action" value="save" class="btn" style="flex: 2;">Save / Overwrite Shock Entry</button>
-                <button type="submit" name="form_action" value="delete" class="btn" style="flex: 1; background-color: #6c757d;" onclick="return confirm('WARNING: Are you sure you want to completely DELETE this shock from the database?');">Delete Shock</button>
+                <button type="button" class="btn btn-clear" style="flex: 1;" onclick="document.getElementById('entryForm').reset();">Clear Form</button>
+                <button type="submit" name="form_action" value="delete" class="btn btn-delete" style="flex: 1;" onclick="return confirm('WARNING: Are you sure you want to completely DELETE this shock from the database?');">Delete Shock</button>
             </div>
         </form>
 
