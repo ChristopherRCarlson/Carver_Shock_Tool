@@ -59,22 +59,22 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
         <style>
             body { font-family: sans-serif; margin: 0; background-color: #f9f9f9; }
             .container { max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-            
+
             .search-box { text-align: center; margin-bottom: 20px; padding: 20px; background: #eee; border-radius: 8px; }
             input[type="text"] { padding: 10px; width: 60%; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
             button { padding: 10px 20px; font-size: 16px; background-color: #d9534f; color: white; border: none; border-radius: 4px; cursor: pointer; }
             button:hover { background-color: #c9302c; }
 
             .result-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; border-left: 5px solid #d9534f; }
-            
+
             .result-header { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
             .oe-title { font-size: 1.4em; font-weight: bold; color: #333; }
-            
+
             .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
             .spec-item { background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 0.9em; }
             .spec-label { display: block; font-weight: bold; color: #555; font-size: 0.8em; margin-bottom: 2px; }
             .spec-value { display: block; color: #333; font-weight: 500; }
-            
+
             /* NEW: Part Link Styling */
             .part-link { color: #d9534f; text-decoration: none; border-bottom: 1px dotted #d9534f; }
             .part-link:hover { background-color: #d9534f; color: white; text-decoration: none; border-bottom: none; }
@@ -93,21 +93,21 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                 /* Stack multiple shock result cards into a single column */
                 .results-grid {
                     display: grid;
-                    grid-template-columns: 1fr; 
+                    grid-template-columns: 1fr;
                     gap: 15px;
                 }
 
                 /* Stack internal sections vertically */
-                .flex-container, 
+                .flex-container,
                 .mounting-section {
                     display: flex;
-                    flex-direction: column; 
+                    flex-direction: column;
                     gap: 10px;
                 }
 
                 /* KEEP YOUR EXISTING SLEEVE LOGIC: Stack inner/outer sleeves */
-                .sleeve-pair { 
-                    flex-direction: column; 
+                .sleeve-pair {
+                    flex-direction: column;
                 }
 
                 /* Give the cards a bit more breathing room on phone screens */
@@ -117,9 +117,9 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                 }
 
                 /* Make the top search bar take up the full width */
-                input[type="text"] { 
-                    width: 100%; 
-                    margin-bottom: 10px; 
+                input[type="text"] {
+                    width: 100%;
+                    margin-bottom: 10px;
                 }
             }
 
@@ -178,7 +178,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                 justify-content: center;
                 align-items: center;
             }
-            
+
             #kit-modal img {
                 max-width: 90%;
                 max-height: 90%;
@@ -188,44 +188,44 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
 
             /* --- PROFESSIONAL SHOP SHEET PRINT ENGINE --- */
             @media print {
-                @page { 
+                @page {
                     size: portrait;
-                    margin: 0.3in; 
+                    margin: 0.3in;
                 }
-                
+
                 /* 1. Kill the 'Website' junk entirely */
-                .global-nav, .search-box, #kit-modal, .nav-link, form, 
-                [style*="position: absolute; right: 0; top: 0;"] { 
-                    display: none !important; 
+                .global-nav, .search-box, #kit-modal, .nav-link, form,
+                [style*="position: absolute; right: 0; top: 0;"] {
+                    display: none !important;
                 }
-                
-                body { 
-                    background: white !important; 
+
+                body {
+                    background: white !important;
                     font-family: "Helvetica", "Arial", sans-serif;
-                    font-size: 11pt; 
-                    color: black; 
+                    font-size: 11pt;
+                    color: black;
                     margin: 0;
                     padding: 0;
                 }
 
-                .container { 
-                    box-shadow: none !important; 
-                    margin: 0 !important; 
-                    padding: 0 !important; 
-                    max-width: 100% !important; 
+                .container {
+                    box-shadow: none !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    max-width: 100% !important;
                 }
 
                 /* 2. Format the Header (OE & Shock P/N) */
-                .result-card { 
-                    border: 2px solid black !important; 
-                    padding: 15px !important; 
+                .result-card {
+                    border: 2px solid black !important;
+                    padding: 15px !important;
                     margin: 0 !important;
                     page-break-inside: avoid;
                     border-radius: 0;
                 }
 
-                .oe-title { 
-                    font-size: 22pt !important; 
+                .oe-title {
+                    font-size: 22pt !important;
                     border-bottom: 2px solid black;
                     margin-bottom: 5px;
                 }
@@ -239,7 +239,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                 }
 
                 /* 4. Compact Kit Section */
-                .maintenance-section { 
+                .maintenance-section {
                     display: flex !important;
                     justify-content: flex-start !important;
                     gap: 20px !important;
@@ -248,78 +248,78 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                     border: 1px solid #ccc;
                 }
 
-                .kit-card { 
+                .kit-card {
                     border: 1px solid black !important;
                     padding: 5px !important;
                     width: 180px !important;
                     height: auto !important;
                 }
 
-                .kit-thumb { 
-                    max-height: 90px !important; 
+                .kit-thumb {
+                    max-height: 90px !important;
                     width: auto !important;
                     display: block;
                     margin: 0 auto 5px auto;
                 }
 
                 /* 5. The 33-Column Grid Fix */
-                .spec-grid { 
-                    display: grid !important; 
+                .spec-grid {
+                    display: grid !important;
                     grid-template-columns: 1fr 1fr 1fr !important; /* 3-Column layout for readability */
-                    gap: 8px !important; 
+                    gap: 8px !important;
                 }
 
-                .spec-item { 
-                    background: transparent !important; 
-                    border: 1px solid #ddd !important; 
-                    padding: 5px !important; 
+                .spec-item {
+                    background: transparent !important;
+                    border: 1px solid #ddd !important;
+                    padding: 5px !important;
                 }
 
-                .spec-label { 
-                    font-size: 8pt !important; 
+                .spec-label {
+                    font-size: 8pt !important;
                     text-transform: uppercase;
                     color: #444 !important;
                 }
 
-                .spec-value { 
-                    font-size: 11pt !important; 
+                .spec-value {
+                    font-size: 11pt !important;
                     font-weight: bold !important;
                 }
 
                 /* 6. Mounting Boxes (Keep grouped) */
-                .mounting-box { 
-                    grid-column: 1 / -1 !important; 
-                    border: 1px solid black !important; 
+                .mounting-box {
+                    grid-column: 1 / -1 !important;
+                    border: 1px solid black !important;
                     margin-top: 10px !important;
                     padding: 10px !important;
                 }
 
-                .section-title { 
-                    font-size: 10pt !important; 
+                .section-title {
+                    font-size: 10pt !important;
                     background: #eee !important;
                     padding: 3px 5px !important;
                     border-bottom: 1px solid black !important;
                 }
 
-                .sleeve-pair { 
-                    display: flex !important; 
+                .sleeve-pair {
+                    display: flex !important;
                     flex-direction: row !important; /* Force side-by-side even on 'mobile' print */
                     gap: 10px !important;
                     margin-top: 5px;
                 }
 
-                .sleeve-pair > div { 
+                .sleeve-pair > div {
                     border: 1px dashed #666 !important;
                     flex: 1;
                 }
 
                 /* 7. Clean up Links */
-                .part-link { 
-                    text-decoration: none !important; 
-                    color: black !important; 
-                    border-bottom: none !important; 
+                .part-link {
+                    text-decoration: none !important;
+                    color: black !important;
+                    border-bottom: none !important;
                 }
-                
+
                 .empty { color: #aaa !important; }
             }
         </style>
@@ -343,7 +343,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
             function logError(sku, type, reason) {
                 const debugBox = document.getElementById('debug-logger');
                 const logText = document.getElementById('debug-log-text');
-                
+
                 // Show the box if it's the first error
                 if (debugBox.style.display === 'none') {
                     debugBox.style.display = 'block';
@@ -356,7 +356,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                 // Add the specific error
                 const time = new Date().toISOString().split('T')[1].split('.')[0];
                 logText.value += `[${time}] ERROR [${type}]: SKU "${sku}" - ${reason}\n`;
-                
+
                 // Auto-scroll to bottom
                 logText.scrollTop = logText.scrollHeight;
             }
@@ -370,7 +370,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
 
             function invalidateLink(element, partNum) {
                 const isNoSku = (!partNum || partNum.trim() === '-' || partNum.trim().toUpperCase() === 'N/A');
-                
+
                 // CASE 1: It's a Kit Image
                 if (element.tagName === 'IMG') {
                     element.src = "https://placehold.co/150x150?text=" + (isNoSku ? "No+SKU" : "No+Photo");
@@ -387,15 +387,15 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                             link.parentNode.replaceChild(span, link);
                         }
                     }
-                } 
+                }
                 // CASE 2: It's a Text Link
                 else if (element.tagName === 'A') {
                     // Safety Check: Make sure the element hasn't already been destroyed!
                     if (element.parentNode) {
                         const span = document.createElement('span');
-                        span.className = 'empty dead-link'; 
+                        span.className = 'empty dead-link';
                         span.textContent = element.textContent;
-                        
+
                         // Swap them out in the DOM
                         element.parentNode.replaceChild(span, element);
                     }
@@ -410,10 +410,15 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                 if (activeRequests >= MAX_CONCURRENT || requestQueue.length === 0) return;
 
                 const { sku, element } = requestQueue.shift();
-                
+
                 const freshCache = getCache();
                 if (freshCache[sku]) {
-                    if (freshCache[sku].v === false) invalidateLink(element, sku);
+                    if (freshCache[sku].v === false) {
+                        invalidateLink(element, sku);
+                    } else if (element.tagName === 'IMG' && element.dataset.src) {
+                        // NEW FIX: Apply the image if another request just cached this SKU as valid
+                        element.src = element.dataset.src;
+                    }
                     processQueue();
                     return;
                 }
@@ -451,12 +456,12 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
 
                 // 1. Grab ALL links and images that have a data-sku attached
                 const targets = document.querySelectorAll('.validate-part, .kit-thumb[data-sku]');
-                
+
                 const observer = new IntersectionObserver((entries, observer) => {
                     entries.forEach(entry => {
                         const el = entry.target;
                         const sku = el.dataset.sku;
-                        
+
                         if (!sku) return;
 
                         if (entry.isIntersecting) {
@@ -469,7 +474,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                                 } else if (el.tagName === 'IMG' && el.dataset.src) {
                                     el.src = el.dataset.src; // Reveal cached image instantly!
                                 }
-                                return; 
+                                return;
                             }
 
                             // FIX 2: ONLY WAIT IF WE ACTUALLY NEED THE SERVER (150ms delay)
@@ -477,7 +482,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                                 observer.unobserve(el);
                                 queueValidation(sku, el);
                             }, 150);
-                        } 
+                        }
                         else {
                             // If it scrolls OFF screen, cancel the pending check
                             if (el.dataset.timeoutId) {
@@ -498,7 +503,7 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
             <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>
             <a href="index.php" style="color: #d9534f; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #d9534f; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
         </div>
-        
+
         <div class="container">
             <h1 style="text-align: center; color: #d9534f; margin-bottom: 20px;">
                 Carver Shock Lookup Tool
@@ -527,13 +532,13 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                     <div class="result-card">
                         <div class="result-header">
                             <div class="result-header" style="position: relative;">
-                                <a href="mailto:christopherrcarlson101@gmail.com?subject=Data Error Report: SKU <?= htmlspecialchars($row[0]) ?>&body=Please describe the error for OE P/N <?= htmlspecialchars($row[0]) ?>:" 
+                                <a href="mailto:christopherrcarlson101@gmail.com?subject=Data Error Report: SKU <?= htmlspecialchars($row[0]) ?>&body=Please describe the error for OE P/N <?= htmlspecialchars($row[0]) ?>:"
                                     style="position: absolute; right: 0; top: 0; font-size: 0.8em; color: #888; text-decoration: underline;">
                                     Report Data Error
                                 </a>
                                 <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
                                 <div style="color: #666; font-size: 1.1em;">Shock P/N: <strong><?= display_clean($row[1]) ?></strong></div>
-                                
+
                                 <div style="margin-top:5px; font-style: italic; color: #000;">
                                     <?php
                                         // Combine specific details logically
@@ -590,8 +595,8 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                         <div class="maintenance-section">
                             <div class="kit-card">
                                 <span class="kit-type-label" style="color: #1e7e34;">Rebuild Kit</span>
-                                <img class="kit-thumb" 
-                                    src="<?= $rebuild_initial ?>" 
+                                <img class="kit-thumb"
+                                    src="<?= $rebuild_initial ?>"
                                     data-src="<?= $rebuild_data_src ?>"
                                     data-sku="<?= $rebuild_data ?>"
                                     onclick="openKitModal('<?= addslashes($rebuild_sku) ?>')"
@@ -604,8 +609,8 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
 
                             <div class="kit-card">
                                 <span class="kit-type-label" style="color: #856404;">Service Kit</span>
-                                <img class="kit-thumb" 
-                                    src="<?= $service_initial ?>" 
+                                <img class="kit-thumb"
+                                    src="<?= $service_initial ?>"
                                     data-src="<?= $service_data_src ?>"
                                     data-sku="<?= $service_data ?>"
                                     onclick="openKitModal('<?= addslashes($service_sku) ?>')"
@@ -663,11 +668,11 @@ if ($search && ($handle = fopen($csvFile, "r")) !== false) {
                                     <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[34]) ?></div>
                                 </div>
                             </div>
-                        </div> 
+                        </div>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
-            
+
             <div id="kit-modal" onclick="this.style.display='none'">
                 <img id="modal-img" src="" alt="Expanded View">
             </div>
