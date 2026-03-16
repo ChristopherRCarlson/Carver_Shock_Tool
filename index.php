@@ -1,9 +1,27 @@
 <?php
+// index.php - V2.0 (SQLite Integrated)
 date_default_timezone_set('America/Chicago');
-$dbFile = 'system_files/Carver_Shocks_Database.csv';
-$lastUpdated = "Unknown";
+
+$dbFile = 'system_files/carver_database.sqlite';
+$lastUpdated = "No updates recorded";
+
 if (file_exists($dbFile)) {
-    $lastUpdated = date("F j, Y, g:i a", filemtime($dbFile));
+    try {
+        $pdo = new PDO('sqlite:' . $dbFile);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // Pull the most recent timestamp from the audit logs
+        $stmt = $pdo->query("SELECT timestamp FROM audit_logs ORDER BY id DESC LIMIT 1");
+        $latest = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($latest) {
+            // Format the database timestamp into the human-readable format you had before
+            $dateObj = new DateTime($latest['timestamp']);
+            $lastUpdated = $dateObj->format("F j, Y, g:i a");
+        }
+    } catch (PDOException $e) {
+        $lastUpdated = "Database Error";
+    }
 }
 ?>
 <!DOCTYPE html>
@@ -32,19 +50,19 @@ if (file_exists($dbFile)) {
         /* --- MOBILE OPTIMIZATION --- */
         @media (max-width: 850px) {
             body {
-                align-items: flex-start; /* Pushes the dashboard to the top instead of the center */
-                padding-top: 30px; /* Gives it just a little breathing room from the phone's top notch */
+                align-items: flex-start;
+                padding-top: 30px;
                 height: auto;
                 min-height: 100vh;
             }
-            
+
             .grid {
-                grid-template-columns: 1fr; /* Forces exactly one column */
+                grid-template-columns: 1fr;
                 gap: 15px;
             }
-            
+
             .dashboard-container {
-                padding: 20px; 
+                padding: 20px;
                 margin-bottom: 30px;
             }
         }
@@ -59,7 +77,7 @@ if (file_exists($dbFile)) {
             <strong>Database Status:</strong> Online &bull;
             <strong>Last Updated:</strong> <?php echo $lastUpdated; ?>
         </div>
-        
+
         <div class="grid">
             <a href="draft_lookup.php" class="nav-card">
                 <span>🔍 SHOCK LOOKUP</span>

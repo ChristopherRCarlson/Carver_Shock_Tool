@@ -1,10 +1,10 @@
 <?php
-// internal_entry.php - V6.4 (Schema v3.0 - 35 Columns, Unified UI & Mobile Optimized)
+// internal_entry.php - V6.5 (SQLite Integrated)
 
-$csvFile = __DIR__ . '/Carver_Shocks_Database.csv';
+$dbFile = __DIR__ . '/carver_database.sqlite';
 $message = "";
 
-// --- MILESTONE 4: Include Audit Logger ---
+// Include the updated Audit Logger
 require_once __DIR__ . '/audit_logger.php';
 
 // Catch the redirect success messages
@@ -18,6 +18,8 @@ if (isset($_GET['status']) && isset($_GET['oe'])) {
         $message = "<div class='success' style='background-color: #fff3cd; color: #856404; border-color: #ffeeba;'>Success: Shock " . $safe_oe . " DELETED!</div>";
     } elseif ($_GET['status'] === 'not_found') {
         $message = "<div class='error'>Error: Shock " . $safe_oe . " not found for deletion.</div>";
+    } elseif ($_GET['status'] === 'error') {
+        $message = "<div class='error'>Error: A database problem occurred.</div>";
     }
 }
 
@@ -33,101 +35,126 @@ function clean_input($data)
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $oeNum = clean_input($_POST['oe_pn']);
-    $actionType = $_POST['form_action'] ?? 'save'; // Determine if saving or deleting.
+    $actionType = $_POST['form_action'] ?? 'save';
 
-    // Build the 33-column array exactly as the CSV expects
-    $newRow = [
-        $oeNum,
-        clean_input($_POST['shock_pn'] ?? ''),
-        clean_input($_POST['product_use'] ?? ''),
-        clean_input($_POST['location'] ?? ''),
-        clean_input($_POST['rebuild_kit'] ?? ''),
-        clean_input($_POST['service_kit'] ?? ''),
-        clean_input($_POST['ifp_depth'] ?? ''),
-        clean_input($_POST['nitrogen_psi'] ?? ''),
-        clean_input($_POST['shaft'] ?? ''),
-        clean_input($_POST['seal_head'] ?? ''),
-        clean_input($_POST['bo_bumper'] ?? ''),
-        clean_input($_POST['body'] ?? ''),
-        clean_input($_POST['inner_body'] ?? ''),
-        clean_input($_POST['body_cap'] ?? ''),
-        clean_input($_POST['bearing_cap'] ?? ''),
-        clean_input($_POST['reservoir'] ?? ''),
-        clean_input($_POST['res_end_cap'] ?? ''),
-        clean_input($_POST['metering_rod'] ?? ''),
-        clean_input($_POST['adj_rebound'] ?? ''),
-        clean_input($_POST['hose'] ?? ''),
-        clean_input($_POST['res_clamp'] ?? ''),
-        clean_input($_POST['bypass_screws'] ?? ''),
-        clean_input($_POST['body_bearing'] ?? ''),
-        clean_input($_POST['body_oring'] ?? ''),
-        clean_input($_POST['body_reducer'] ?? ''),
-        clean_input($_POST['body_spacer'] ?? ''),
-        clean_input($_POST['body_inner_sleeve'] ?? ''),
-        clean_input($_POST['body_outer_sleeve'] ?? ''),
-        clean_input($_POST['shaft_eyelet'] ?? ''),
-        clean_input($_POST['shaft_bearing'] ?? ''),
-        clean_input($_POST['shaft_oring'] ?? ''),
-        clean_input($_POST['shaft_reducer'] ?? ''),
-        clean_input($_POST['shaft_spacer'] ?? ''),
-        clean_input($_POST['shaft_inner_sleeve'] ?? ''),
-        clean_input($_POST['shaft_outer_sleeve'] ?? '')
-    ];
+    $status = 'error';
 
-    $tempFile = $csvFile . '.tmp';
-    $updated = false;
-    $status = '';
+    try {
+        $pdo = new PDO('sqlite:' . $dbFile);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    if (($handle = fopen($csvFile, "r")) !== false && ($tempHandle = fopen($tempFile, "w")) !== false) {
-        $headers = fgetcsv($handle);
-        if ($headers !== false) {
-            fputcsv($tempHandle, $headers);
-        }
+        // Check if the shock already exists
+        $checkStmt = $pdo->prepare("SELECT * FROM shocks WHERE oe_pn = :oe_pn LIMIT 1");
+        $checkStmt->execute([':oe_pn' => $oeNum]);
+        $existingRow = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
-        while (($data = fgetcsv($handle)) !== false) {
-            if (strcasecmp(trim($data[0]), $oeNum) === 0) {
-                if ($actionType === 'delete') {
-                    // MILESTONE 4: Log the DELETE action and skip writing to temp file.
-                    log_audit_action('Carver_Shocks_Database', $oeNum, 'DELETE', $data, []);
-                    $updated = true;
-                    $status = 'deleted';
-                } else {
-                    // MILESTONE 4: Log the UPDATE action and write new row.
-                    fputcsv($tempHandle, $newRow);
-                    log_audit_action('Carver_Shocks_Database', $oeNum, 'UPDATE', $data, $newRow);
-                    $updated = true;
-                    $status = 'updated';
-                }
+        if ($actionType === 'delete') {
+            if ($existingRow) {
+                // DELETE SHOCK
+                $delStmt = $pdo->prepare("DELETE FROM shocks WHERE oe_pn = :oe_pn");
+                $delStmt->execute([':oe_pn' => $oeNum]);
+
+                // Log the action using the new function name
+                logAudit('shocks', $oeNum, 'DELETE', $existingRow, null, $pdo);
+                $status = 'deleted';
             } else {
-                fputcsv($tempHandle, $data);
+                $status = 'not_found';
+            }
+        } else {
+            // Build the data array for SAVE / UPDATE
+            $newData = [
+                ':oe_pn' => $oeNum,
+                ':shock_pn' => clean_input($_POST['shock_pn'] ?? ''),
+                ':product_use' => clean_input($_POST['product_use'] ?? ''),
+                ':location' => clean_input($_POST['location'] ?? ''),
+                ':rebuild_kit' => clean_input($_POST['rebuild_kit'] ?? ''),
+                ':service_kit' => clean_input($_POST['service_kit'] ?? ''),
+                ':ifp_depth' => clean_input($_POST['ifp_depth'] ?? ''),
+                ':nitrogen_psi' => clean_input($_POST['nitrogen_psi'] ?? ''),
+                ':shaft' => clean_input($_POST['shaft'] ?? ''),
+                ':seal_head' => clean_input($_POST['seal_head'] ?? ''),
+                ':bo_bumper' => clean_input($_POST['bo_bumper'] ?? ''),
+                ':body' => clean_input($_POST['body'] ?? ''),
+                ':inner_body' => clean_input($_POST['inner_body'] ?? ''),
+                ':body_cap' => clean_input($_POST['body_cap'] ?? ''),
+                ':bearing_cap' => clean_input($_POST['bearing_cap'] ?? ''),
+                ':reservoir' => clean_input($_POST['reservoir'] ?? ''),
+                ':res_end_cap' => clean_input($_POST['res_end_cap'] ?? ''),
+                ':metering_rod' => clean_input($_POST['metering_rod'] ?? ''),
+                ':adj_rebound' => clean_input($_POST['adj_rebound'] ?? ''),
+                ':hose' => clean_input($_POST['hose'] ?? ''),
+                ':res_clamp' => clean_input($_POST['res_clamp'] ?? ''),
+                ':bypass_screws' => clean_input($_POST['bypass_screws'] ?? ''),
+                ':body_bearing' => clean_input($_POST['body_bearing'] ?? ''),
+                ':body_oring' => clean_input($_POST['body_oring'] ?? ''),
+                ':body_reducer' => clean_input($_POST['body_reducer'] ?? ''),
+                ':body_spacer' => clean_input($_POST['body_spacer'] ?? ''),
+                ':body_inner_sleeve' => clean_input($_POST['body_inner_sleeve'] ?? ''),
+                ':body_outer_sleeve' => clean_input($_POST['body_outer_sleeve'] ?? ''),
+                ':shaft_eyelet' => clean_input($_POST['shaft_eyelet'] ?? ''),
+                ':shaft_bearing' => clean_input($_POST['shaft_bearing'] ?? ''),
+                ':shaft_oring' => clean_input($_POST['shaft_oring'] ?? ''),
+                ':shaft_reducer' => clean_input($_POST['shaft_reducer'] ?? ''),
+                ':shaft_spacer' => clean_input($_POST['shaft_spacer'] ?? ''),
+                ':shaft_inner_sleeve' => clean_input($_POST['shaft_inner_sleeve'] ?? ''),
+                ':shaft_outer_sleeve' => clean_input($_POST['shaft_outer_sleeve'] ?? '')
+            ];
+
+            if ($existingRow) {
+                // UPDATE EXISTING SHOCK
+                $updateQuery = "UPDATE shocks SET
+                    shock_pn = :shock_pn, product_use = :product_use, location = :location, rebuild_kit = :rebuild_kit,
+                    service_kit = :service_kit, ifp_depth = :ifp_depth, nitrogen_psi = :nitrogen_psi, shaft = :shaft,
+                    seal_head = :seal_head, bo_bumper = :bo_bumper, body = :body, inner_body = :inner_body,
+                    body_cap = :body_cap, bearing_cap = :bearing_cap, reservoir = :reservoir, res_end_cap = :res_end_cap,
+                    metering_rod = :metering_rod, adj_rebound = :adj_rebound, hose = :hose, res_clamp = :res_clamp,
+                    bypass_screws = :bypass_screws, body_bearing = :body_bearing, body_oring = :body_oring,
+                    body_reducer = :body_reducer, body_spacer = :body_spacer, body_inner_sleeve = :body_inner_sleeve,
+                    body_outer_sleeve = :body_outer_sleeve, shaft_eyelet = :shaft_eyelet, shaft_bearing = :shaft_bearing,
+                    shaft_oring = :shaft_oring, shaft_reducer = :shaft_reducer, shaft_spacer = :shaft_spacer,
+                    shaft_inner_sleeve = :shaft_inner_sleeve, shaft_outer_sleeve = :shaft_outer_sleeve
+                    WHERE oe_pn = :oe_pn";
+
+                $updateStmt = $pdo->prepare($updateQuery);
+                $updateStmt->execute($newData);
+
+                logAudit('shocks', $oeNum, 'UPDATE', $existingRow, $newData, $pdo);
+                $status = 'updated';
+            } else {
+                // INSERT NEW SHOCK
+                $insertQuery = "INSERT INTO shocks (
+                    oe_pn, shock_pn, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
+                    shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
+                    metering_rod, adj_rebound, hose, res_clamp, bypass_screws, body_bearing, body_oring,
+                    body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing,
+                    shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve
+                ) VALUES (
+                    :oe_pn, :shock_pn, :product_use, :location, :rebuild_kit, :service_kit, :ifp_depth, :nitrogen_psi,
+                    :shaft, :seal_head, :bo_bumper, :body, :inner_body, :body_cap, :bearing_cap, :reservoir, :res_end_cap,
+                    :metering_rod, :adj_rebound, :hose, :res_clamp, :bypass_screws, :body_bearing, :body_oring,
+                    :body_reducer, :body_spacer, :body_inner_sleeve, :body_outer_sleeve, :shaft_eyelet, :shaft_bearing,
+                    :shaft_oring, :shaft_reducer, :shaft_spacer, :shaft_inner_sleeve, :shaft_outer_sleeve
+                )";
+
+                $insertStmt = $pdo->prepare($insertQuery);
+                $insertStmt->execute($newData);
+
+                logAudit('shocks', $oeNum, 'CREATE', null, $newData, $pdo);
+                $status = 'added';
             }
         }
-        fclose($handle);
 
-        if (!$updated && $actionType !== 'delete') {
-            fputcsv($tempHandle, $newRow);
-            // MILESTONE 4: Log the CREATE action.
-            log_audit_action('Carver_Shocks_Database', $oeNum, 'CREATE', [], $newRow);
-            $status = 'added';
-        } elseif (!$updated && $actionType === 'delete') {
-            // Tried to delete a shock that doesn't exist.
-            $status = 'not_found';
-        }
-        fclose($tempHandle);
-
-        if (rename($tempFile, $csvFile)) {
-            $safe_redirect = basename(__FILE__);
-            $header_str = "Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum);
-
-            /** @psalm-suppress TaintedHeader, TaintedInput */
-            header($header_str);
-            exit;
-        } else {
-            $message = "<div class='error'>Error: Could not replace the database file. Check permissions.</div>";
-        }
-    } else {
-        $message = "<div class='error'>Error: Could not open the database file.</div>";
+    } catch (PDOException $e) {
+        error_log("Database Error: " . $e->getMessage());
+        $status = 'error';
     }
+
+    $safe_redirect = basename(__FILE__);
+    $header_str = "Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum);
+
+    /** @psalm-suppress TaintedHeader, TaintedInput */
+    header($header_str);
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -304,12 +331,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         const oeValue = this.value.trim();
                         if (oeValue === '') return;
 
-                        fetch('api_check_duplicate.php?oe=' + encodeURIComponent(oeValue))
+                        fetch('api_check_duplicate.php?oe_pn=' + encodeURIComponent(oeValue))
                             .then(response => response.json())
                             .then(result => {
-                                if (result.exists || result.success) {
+                                // THE FIX: Look for 'isDuplicate' from the new SQLite API
+                                if (result.isDuplicate) {
                                     if (confirm('OE ' + oeValue + ' already exists in the database! Would you like to load its data to update it?')) {
-                                        const shockData = result.data || result;
+
+                                        // Tell it to specifically use the associative data array we built in the API
+                                        const shockData = result.assoc_data || result;
+
                                         for (const [key, value] of Object.entries(shockData)) {
                                             const inputField = document.querySelector(`[name="${key}"]`);
                                             if (inputField && key !== 'oe_pn') {
