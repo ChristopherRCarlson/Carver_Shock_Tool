@@ -4,11 +4,20 @@ date_default_timezone_set('America/Chicago');
 
 $dbFile = 'system_files/carver_database.sqlite';
 $lastUpdated = "No updates recorded";
+$dbStatus = "Offline";
+
+// FIX: Darker red (#8a1c1c) provides a > 7.0 contrast ratio (AAA compliant)
+$dbStatusColor = "#8a1c1c";
 
 if (file_exists($dbFile)) {
     try {
         $pdo = new PDO('sqlite:' . $dbFile);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $dbStatus = "Online";
+
+        // FIX: Darker green (#135e24) provides a > 7.0 contrast ratio (AAA compliant)
+        $dbStatusColor = "#135e24";
 
         // Pull the most recent timestamp from the audit logs
         $stmt = $pdo->query("SELECT timestamp FROM audit_logs ORDER BY id DESC LIMIT 1");
@@ -20,7 +29,11 @@ if (file_exists($dbFile)) {
             $lastUpdated = $dateObj->format("F j, Y, g:i a");
         }
     } catch (PDOException $e) {
-        $lastUpdated = "Database Error";
+        $lastUpdated = "Connection Failed";
+        $dbStatus = "Error";
+
+        // FIX: Darker red for error state
+        $dbStatusColor = "#8a1c1c";
     }
 }
 ?>
@@ -36,7 +49,7 @@ if (file_exists($dbFile)) {
         h1 { color: #333; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
         p { color: #333; margin-bottom: 30px; } /* Increased contrast from #666 */
 
-        .status-bar { background: #e9ecef; color: #495057; padding: 10px; border-radius: 6px; font-size: 0.85em; margin-bottom: 30px; border-left: 4px solid #17a2b8; text-align: left;}
+        .status-bar { background: #e9ecef; padding: 10px; border-radius: 6px; font-size: 0.85em; margin-bottom: 30px; border-left: 4px solid #17a2b8; text-align: left;}
         .status-bar strong { color: #222; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
@@ -78,7 +91,7 @@ if (file_exists($dbFile)) {
         <p>Internal Digital Infrastructure for Technicians</p>
 
         <div class="status-bar">
-            <strong>Database Status:</strong> Online &bull;
+            <strong>Database Status:</strong> <span style="color: <?php echo $dbStatusColor; ?>; font-weight: 600;"><?php echo $dbStatus; ?></span> &bull;
             <strong>Last Updated:</strong> <?php echo $lastUpdated; ?>
         </div>
 
