@@ -57,7 +57,6 @@ if ($search) {
         while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
             $results[] = $row;
         }
-
     } catch (PDOException $e) {
         $dbError = "Database Error: " . $e->getMessage();
     }
@@ -270,7 +269,7 @@ if ($search) {
                 </form>
             </div>
 
-            <?php if (isset($dbError)): ?>
+            <?php if (isset($dbError)) : ?>
                 <div style="color: red; background: #fee; padding: 10px; border-radius: 4px; margin-bottom: 10px;"><?= $dbError ?></div>
             <?php endif; ?>
 
@@ -295,10 +294,18 @@ if ($search) {
                                 <div style="margin-top:5px; font-style: italic; color: #000;">
                                     <?php
                                     $desc_parts = [];
-                                    if (trim($row[2])) $desc_parts[] = "Use: " . trim($row[2]);
-                                    if (trim($row[3])) $desc_parts[] = "Position: " . trim($row[3]);
-                                    if (trim($row[6])) $desc_parts[] = "IFP: " . trim($row[6]);
-                                    if (trim($row[7])) $desc_parts[] = "Nitrogen: " . trim($row[7]) . " PSI";
+                                    if (trim($row[2])) {
+                                        $desc_parts[] = "Use: " . trim($row[2]);
+                                    }
+                                    if (trim($row[3])) {
+                                        $desc_parts[] = "Position: " . trim($row[3]);
+                                    }
+                                    if (trim($row[6])) {
+                                        $desc_parts[] = "IFP: " . trim($row[6]);
+                                    }
+                                    if (trim($row[7])) {
+                                        $desc_parts[] = "Nitrogen: " . trim($row[7]) . " PSI";
+                                    }
                                     echo empty($desc_parts) ? '<span class="empty">-</span>' : htmlspecialchars(implode(" | ", $desc_parts));
                                     ?>
                                 </div>

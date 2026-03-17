@@ -32,7 +32,6 @@ if (!empty($oe_pn)) {
             $row['new_data'] = $row['new_data'] ? json_decode($row['new_data'], true) : [];
             $logs[] = $row;
         }
-
     } catch (PDOException $e) {
         $error = "Database Error: " . $e->getMessage();
     }
@@ -150,7 +149,7 @@ if (!empty($oe_pn)) {
             </form>
         </div>
 
-        <?php if (isset($error)): ?>
+        <?php if (isset($error)) : ?>
             <div class="empty-state" style="color: red;"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif (!$searched) : ?>
             <div class="empty-state">Enter a shock OE P/N above to view its version history.</div>

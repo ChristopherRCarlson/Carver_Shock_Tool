@@ -143,7 +143,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $status = 'added';
             }
         }
-
     } catch (PDOException $e) {
         error_log("Database Error: " . $e->getMessage());
         $status = 'error';

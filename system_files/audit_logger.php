@@ -1,8 +1,10 @@
 <?php
+
 // system_files/audit_logger.php
 
 // THE FIX: Added $pdo = null to the end of the function arguments
-function logAudit($tableName, $recordId, $action, $oldData = null, $newData = null, $pdo = null) {
+function logAudit($tableName, $recordId, $action, $oldData = null, $newData = null, $pdo = null)
+{
     $dbFile = __DIR__ . '/carver_database.sqlite';
 
     try {
@@ -35,9 +37,7 @@ function logAudit($tableName, $recordId, $action, $oldData = null, $newData = nu
         $stmt->execute([
             $logId, $tableName, $recordId, $action, $oldDataStr, $newDataStr, $changedBy, $timestamp
         ]);
-
     } catch (PDOException $e) {
         error_log("Audit Log Error: " . $e->getMessage());
     }
 }
-?>

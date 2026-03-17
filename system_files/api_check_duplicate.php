@@ -1,4 +1,5 @@
 <?php
+
 // system_files/api_check_duplicate.php
 header('Content-Type: application/json');
 
@@ -48,8 +49,6 @@ try {
     } else {
         echo json_encode(['isDuplicate' => false]);
     }
-
 } catch (PDOException $e) {
     echo json_encode(['error' => 'Database error: ' . $e->getMessage()]);
 }
-?>
