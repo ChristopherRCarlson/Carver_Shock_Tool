@@ -81,9 +81,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ':reservoir' => clean_input($_POST['reservoir'] ?? ''),
                 ':res_end_cap' => clean_input($_POST['res_end_cap'] ?? ''),
                 ':metering_rod' => clean_input($_POST['metering_rod'] ?? ''),
-                ':adj_rebound' => clean_input($_POST['adj_rebound'] ?? ''),
+                ':rebound_adjuster' => clean_input($_POST['rebound_adjuster'] ?? ''),
                 ':hose' => clean_input($_POST['hose'] ?? ''),
                 ':res_clamp' => clean_input($_POST['res_clamp'] ?? ''),
+                ':comp_adjuster' => clean_input($_POST['comp_adjuster'] ?? ''),
+                ':comp_adjuster_knob' => clean_input($_POST['comp_adjuster_knob'] ?? ''),
+                ':comp_adjuster_screw' => clean_input($_POST['comp_adjuster_screw'] ?? ''),
                 ':bypass_screws' => clean_input($_POST['bypass_screws'] ?? ''),
                 ':body_bearing' => clean_input($_POST['body_bearing'] ?? ''),
                 ':body_oring' => clean_input($_POST['body_oring'] ?? ''),
@@ -107,8 +110,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     service_kit = :service_kit, ifp_depth = :ifp_depth, nitrogen_psi = :nitrogen_psi, shaft = :shaft,
                     seal_head = :seal_head, bo_bumper = :bo_bumper, body = :body, inner_body = :inner_body,
                     body_cap = :body_cap, bearing_cap = :bearing_cap, reservoir = :reservoir, res_end_cap = :res_end_cap,
-                    metering_rod = :metering_rod, adj_rebound = :adj_rebound, hose = :hose, res_clamp = :res_clamp,
-                    bypass_screws = :bypass_screws, body_bearing = :body_bearing, body_oring = :body_oring,
+                    metering_rod = :metering_rod, rebound_adjuster = :rebound_adjuster, comp_adjuster = :comp_adjuster,
+                    comp_adjuster_knob = :comp_adjuster_knob, comp_adjuster_screw = :comp_adjuster_screw, hose = :hose,
+                    res_clamp = :res_clamp, bypass_screws = :bypass_screws, body_bearing = :body_bearing, body_oring = :body_oring,
                     body_reducer = :body_reducer, body_spacer = :body_spacer, body_inner_sleeve = :body_inner_sleeve,
                     body_outer_sleeve = :body_outer_sleeve, shaft_eyelet = :shaft_eyelet, shaft_bearing = :shaft_bearing,
                     shaft_oring = :shaft_oring, shaft_reducer = :shaft_reducer, shaft_spacer = :shaft_spacer,
@@ -125,15 +129,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $insertQuery = "INSERT INTO shocks (
                     oe_pn, shock_pn, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
                     shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
-                    metering_rod, adj_rebound, hose, res_clamp, bypass_screws, body_bearing, body_oring,
-                    body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing,
-                    shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve
+                    metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose,
+                    res_clamp, bypass_screws, body_bearing, body_oring, body_reducer, body_spacer, body_inner_sleeve,
+                    body_outer_sleeve, shaft_eyelet, shaft_bearing, shaft_oring, shaft_reducer, shaft_spacer,
+                    shaft_inner_sleeve, shaft_outer_sleeve
                 ) VALUES (
                     :oe_pn, :shock_pn, :product_use, :location, :rebuild_kit, :service_kit, :ifp_depth, :nitrogen_psi,
                     :shaft, :seal_head, :bo_bumper, :body, :inner_body, :body_cap, :bearing_cap, :reservoir, :res_end_cap,
-                    :metering_rod, :adj_rebound, :hose, :res_clamp, :bypass_screws, :body_bearing, :body_oring,
-                    :body_reducer, :body_spacer, :body_inner_sleeve, :body_outer_sleeve, :shaft_eyelet, :shaft_bearing,
-                    :shaft_oring, :shaft_reducer, :shaft_spacer, :shaft_inner_sleeve, :shaft_outer_sleeve
+                    :metering_rod, :rebound_adjuster, :comp_adjuster, :comp_adjuster_knob, :comp_adjuster_screw, :hose,
+                    :res_clamp, :bypass_screws, :body_bearing, :body_oring, :body_reducer, :body_spacer, :body_inner_sleeve,
+                    :body_outer_sleeve, :shaft_eyelet, :shaft_bearing, :shaft_oring, :shaft_reducer, :shaft_spacer,
+                    :shaft_inner_sleeve, :shaft_outer_sleeve
                 )";
 
                 $insertStmt = $pdo->prepare($insertQuery);
@@ -272,7 +278,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <div class="form-group"><label>Body Cap</label><input type="text" name="body_cap" id="body_cap"></div>
                     <div class="form-group"><label>Bearing Cap</label><input type="text" name="bearing_cap" id="bearing_cap"></div>
                     <div class="form-group"><label>Metering Rod</label><input type="text" name="metering_rod" id="metering_rod"></div>
-                    <div class="form-group"><label>Adj Rebound</label><input type="text" name="adj_rebound" id="adj_rebound"></div>
+                    <div class="form-group"><label>Rebound Adjuster</label><input type="text" name="rebound_adjuster" id="rebound_adjuster"></div>
+                    <div class="form-group"><label>Compression Adjuster</label><input type="text" name="comp_adjuster" id="comp_adjuster"></div>
+                    <div class="form-group"><label>Compression Adjuster Knob</label><input type="text" name="comp_adjuster_knob" id="comp_adjuster_knob"></div>
+                    <div class="form-group"><label>Compression Adjuster Screw</label><input type="text" name="comp_adjuster_screw" id="comp_adjuster_screw"></div>
                 </div>
             </div>
 
@@ -280,9 +289,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h3>Reservoir Assembly</h3>
                 <div class="grid">
                     <div class="form-group"><label>Reservoir</label><input type="text" name="reservoir" id="reservoir"></div>
-                    <div class="form-group"><label>Res End Cap</label><input type="text" name="res_end_cap" id="res_end_cap"></div>
+                    <div class="form-group"><label>Res. End Cap</label><input type="text" name="res_end_cap" id="res_end_cap"></div>
                     <div class="form-group"><label>Hose</label><input type="text" name="hose" id="hose"></div>
-                    <div class="form-group"><label>Res Clamp</label><input type="text" name="res_clamp" id="res_clamp"></div>
+                    <div class="form-group"><label>Res. Clamp</label><input type="text" name="res_clamp" id="res_clamp"></div>
                     <div class="form-group"><label>Bypass Screws</label><input type="text" name="bypass_screws" id="bypass_screws"></div>
                 </div>
             </div>

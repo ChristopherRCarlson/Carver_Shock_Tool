@@ -6,12 +6,13 @@ $dbFile = __DIR__ . '/system_files/carver_database.sqlite';
 $logs = [];
 $searched = false;
 
-// The 35 column headers so we can make the changes human-readable
+// The 38 column headers so we can make the changes human-readable
 $columns = [
     "OE P/N", "Shock P/N", "Product Use", "Location", "Rebuild Kit", "Service Kit", "IFP Depth",
     "Nitrogen PSI", "Shaft", "Seal Head", "B/O Bumper", "Body", "Inner Body", "Body Cap",
-    "Bearing Cap", "Reservoir", "Res End Cap", "Metering Rod", "Adj Rebound", "Hose",
-    "Res Clamp", "Bypass Screws", "Body Bearing", "Body O-Ring", "Body Reducer", "Body Spacer",
+    "Bearing Cap", "Reservoir", "Res End Cap", "Metering Rod", "Rebound Adjuster",
+    "Compression Adjuster", "Compression Adjuster Knob", "Compression Adjuster Screw",
+    "Hose", "Res Clamp", "Bypass Screws", "Body Bearing", "Body O-Ring", "Body Reducer", "Body Spacer",
     "Body Inner Sleeve", "Body Outer Sleeve", "Shaft Eyelet", "Shaft Bearing", "Shaft O-Ring",
     "Shaft Reducer", "Shaft Spacer", "Shaft Inner Sleeve", "Shaft Outer Sleeve"
 ];

@@ -32,12 +32,12 @@ if ($search) {
         $pdo = new PDO('sqlite:' . $dbFile);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // We select the 35 columns in the exact order the original CSV had them
+        // We select the 38 columns in the exact order the original CSV had them
         // to ensure $row[0], $row[1], etc. mapping remains identical.
         $query = "SELECT
                     oe_pn, shock_pn, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
                     shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
-                    metering_rod, adj_rebound, hose, res_clamp, bypass_screws, body_bearing, body_oring,
+                    metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose, res_clamp, bypass_screws, body_bearing, body_oring,
                     body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing,
                     shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve
                   FROM shocks
@@ -342,41 +342,44 @@ if ($search) {
                             <div class="spec-item"><span class="spec-label">Body Cap</span><span class="spec-value"><?= display_linked_part($row[13]) ?></span></div>
                             <div class="spec-item"><span class="spec-label">Bearing Cap</span><span class="spec-value"><?= display_linked_part($row[14]) ?></span></div>
                             <div class="spec-item"><span class="spec-label">Metering Rod</span><span class="spec-value"><?= display_linked_part($row[17]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Knob - Rebound</span><span class="spec-value"><?= display_linked_part($row[18]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Rebound Adjuster</span><span class="spec-value"><?= display_linked_part($row[18]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Compression Adjuster</span><span class="spec-value"><?= display_linked_part($row[19]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Comp. Adj. Knob</span><span class="spec-value"><?= display_linked_part($row[20]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Comp. Adj. Screw</span><span class="spec-value"><?= display_linked_part($row[21]) ?></span></div>
 
                             <div class="mounting-box">
                                 <span class="section-title">Reservoir Assembly</span>
                                 <div class="sleeve-pair">
                                     <div style="flex:1"><span class="spec-label">Reservoir</span><?= display_linked_part($row[15]) ?></div>
                                     <div style="flex:1"><span class="spec-label">End Cap</span><?= display_linked_part($row[16]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Hose</span><?= display_linked_part($row[19]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Clamp</span><?= display_linked_part($row[20]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Bypass Screws</span><?= display_linked_part($row[21]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Hose</span><?= display_linked_part($row[22]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Clamp</span><?= display_linked_part($row[23]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Bypass Screws</span><?= display_linked_part($row[24]) ?></div>
                                 </div>
                             </div>
 
                             <div class="mounting-box">
                                 <span class="section-title">Body End Mounting</span>
                                 <div class="sleeve-pair">
-                                    <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[22]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[23]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[24]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[25]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[26]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[27]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[25]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[26]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[27]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[28]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[29]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[30]) ?></div>
                                 </div>
                             </div>
 
                             <div class="mounting-box">
                                 <span class="section-title">Shaft - Eyelet End Mounting</span>
                                 <div class="sleeve-pair">
-                                    <div style="flex:1"><span class="spec-label">Eyelet</span><?= display_linked_part($row[28]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[29]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[30]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[31]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[32]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[33]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[34]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Eyelet</span><?= display_linked_part($row[31]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[32]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[33]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[34]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[35]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[36]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[37]) ?></div>
                                 </div>
                             </div>
                         </div>
