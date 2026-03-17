@@ -51,10 +51,13 @@ if (!empty($oe_pn)) {
 
         .search-box { text-align: center; margin-bottom: 20px; padding: 20px; background: #eee; border-radius: 8px; }
         input[type="text"] { padding: 10px; width: 60%; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 10px 20px; font-size: 16px; background-color: #d9534f; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background-color: #c9302c; }
 
-        .result-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; border-left: 5px solid #d9534f; }
+        /* Fixed: Button color darkened for AA contrast */
+        button { padding: 10px 20px; font-size: 16px; background-color: #c62828; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background-color: #a52727; }
+
+        /* Fixed: Border left color darkened for AA contrast */
+        .result-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; border-left: 5px solid #c62828; }
 
         .result-header { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
         .oe-title { font-size: 1.4em; font-weight: bold; color: #333; }
@@ -65,8 +68,9 @@ if (!empty($oe_pn)) {
         .spec-value { display: block; color: #333; font-weight: 500; }
 
         /* NEW: Part Link Styling */
-        .part-link { color: #d9534f; text-decoration: none; border-bottom: 1px dotted #d9534f; }
-        .part-link:hover { background-color: #d9534f; color: white; text-decoration: none; border-bottom: none; }
+        /* Fixed: Link color darkened for AA contrast */
+        .part-link { color: #c62828; text-decoration: none; border-bottom: 1px dotted #c62828; }
+        .part-link:hover { background-color: #c62828; color: white; text-decoration: none; border-bottom: none; }
         .part-link.dead-link{ color: #000!important; text-decoration: none!important; border-bottom: none!important; cursor: default!important; pointer-events: none; }
 
         .empty { color: #ccc; font-style: italic; }
@@ -120,18 +124,24 @@ if (!empty($oe_pn)) {
         }
 
         /* --- AUDIT LOG SPECIFIC ADDITIONS --- */
-        .log-entry { border: 1px solid #ddd; margin-bottom: 20px; border-radius: 4px; overflow: hidden; background: #fff; border-left: 5px solid #d9534f; }
+        /* Fixed: Border left color darkened */
+        .log-entry { border: 1px solid #ddd; margin-bottom: 20px; border-radius: 4px; overflow: hidden; background: #fff; border-left: 5px solid #c62828; }
         .log-header { background: #f8f9fa; padding: 12px 15px; display: flex; justify-content: space-between; font-weight: bold; border-bottom: 1px solid #eee; }
         .log-body { padding: 20px; }
-        .CREATE { color: #5cb85c; }
-        .UPDATE { color: #0275d8; }
-        .DELETE { color: #d9534f; }
+
+        /* Fixed: Audit action colors updated for AA contrast */
+        .CREATE { color: #2e7d32; }
+        .UPDATE { color: #0056b3; }
+        .DELETE { color: #c62828; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #eee; padding: 12px; text-align: left; font-size: 0.9em; }
         th { background-color: #fcfcfc; color: #555; font-size: 0.8em; text-transform: uppercase; }
-        .old-val { color: #d9534f; text-decoration: line-through; background: #fff5f5; padding: 2px 5px; }
-        .new-val { color: #5cb85c; font-weight: bold; background: #f5fff5; padding: 2px 5px; }
+
+        /* Fixed: Cell text colors updated for AA contrast */
+        .old-val { color: #c62828; text-decoration: line-through; background: #fff5f5; padding: 2px 5px; }
+        .new-val { color: #2e7d32; font-weight: bold; background: #f5fff5; padding: 2px 5px; }
+
         .empty-state { text-align: center; color: #777; padding: 40px 0; font-style: italic; }
     </style>
 </head>
@@ -139,7 +149,7 @@ if (!empty($oe_pn)) {
 
     <div class="global-nav" style="background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
         <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>
-        <a href="index.php" style="color: #d9534f; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #d9534f; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
+        <a href="index.php" style="color: #ff8a80; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #ff8a80; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
     </div>
 
     <div class="container">
@@ -151,7 +161,7 @@ if (!empty($oe_pn)) {
         </div>
 
         <?php if (isset($error)) : ?>
-            <div class="empty-state" style="color: red;"><?php echo htmlspecialchars($error); ?></div>
+            <div class="empty-state" style="color: #c62828;"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif (!$searched) : ?>
             <div class="empty-state">Enter a shock OE P/N above to view its version history.</div>
         <?php elseif (empty($logs)) : ?>
@@ -167,7 +177,7 @@ if (!empty($oe_pn)) {
                     </div>
                     <div class="log-body">
                             <?php if ($log['action'] === 'CREATE') : ?>
-                                <p style="margin: 0 0 15px 0; color: #5cb85c; font-weight: bold;">Initial record created with the following data:</p>
+                                <p style="margin: 0 0 15px 0; color: #2e7d32; font-weight: bold;">Initial record created with the following data:</p>
                                 <table>
                                     <tr>
                                         <th>Field</th>
@@ -187,7 +197,7 @@ if (!empty($oe_pn)) {
                                 </table>
 
                             <?php elseif ($log['action'] === 'DELETE') : ?>
-                                <p style="margin: 0 0 15px 0; color: #d9534f; font-weight: bold;">Record was completely deleted. Final state before deletion:</p>
+                                <p style="margin: 0 0 15px 0; color: #c62828; font-weight: bold;">Record was completely deleted. Final state before deletion:</p>
                                 <table>
                                     <tr>
                                         <th>Field</th>
@@ -207,7 +217,7 @@ if (!empty($oe_pn)) {
                                 </table>
 
                             <?php elseif ($log['action'] === 'UPDATE') : ?>
-                                <p style="margin: 0 0 15px 0; color: #0275d8; font-weight: bold;">The following fields were modified:</p>
+                                <p style="margin: 0 0 15px 0; color: #0056b3; font-weight: bold;">The following fields were modified:</p>
                                 <table>
                                     <tr>
                                         <th>Field</th>

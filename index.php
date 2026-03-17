@@ -15,7 +15,7 @@ if (file_exists($dbFile)) {
         $latest = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($latest) {
-            // Format the database timestamp into the human-readable format you had before
+            // Format the database timestamp into the human-readable format
             $dateObj = new DateTime($latest['timestamp']);
             $lastUpdated = $dateObj->format("F j, Y, g:i a");
         }
@@ -34,18 +34,22 @@ if (file_exists($dbFile)) {
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
         .dashboard-container { background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); text-align: center; max-width: 600px; width: 90%; border-top: 8px solid #d9534f; }
         h1 { color: #333; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px; }
-        p { color: #666; margin-bottom: 30px; }
+        p { color: #333; margin-bottom: 30px; } /* Increased contrast from #666 */
 
         .status-bar { background: #e9ecef; color: #495057; padding: 10px; border-radius: 6px; font-size: 0.85em; margin-bottom: 30px; border-left: 4px solid #17a2b8; text-align: left;}
-        .status-bar strong { color: #333; }
+        .status-bar strong { color: #222; }
 
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .nav-card { background: #fff; border: 2px solid #eee; padding: 25px; border-radius: 8px; text-decoration: none; color: #333; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; }
         .nav-card:hover { border-color: #d9534f; transform: translateY(-5px); box-shadow: 0 5px 15px rgba(217, 83, 79, 0.2); }
         .nav-card i { font-size: 2.5em; margin-bottom: 15px; color: #d9534f; }
         .nav-card span { font-weight: bold; font-size: 1.1em; }
-        .nav-card small { color: #888; margin-top: 5px; font-weight: normal; }
-        .footer { margin-top: 30px; font-size: 0.8em; color: #aaa; border-top: 1px solid #eee; padding-top: 15px; }
+
+        /* Fixed: Updated color from #888 to #595959 for 7:1 contrast ratio */
+        .nav-card small { color: #595959; margin-top: 5px; font-weight: normal; }
+
+        /* Fixed: Updated footer color from #aaa to #767676 for 4.5:1 contrast ratio */
+        .footer { margin-top: 30px; font-size: 0.8em; color: #767676; border-top: 1px solid #eee; padding-top: 15px; }
 
         /* --- MOBILE OPTIMIZATION --- */
         @media (max-width: 850px) {

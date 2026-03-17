@@ -184,14 +184,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         input[type="text"], input[type="number"], select { padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; } /* Larger text for mobile taps */
         input[type="text"]:focus, select:focus { border-color: #d9534f; outline: none; box-shadow: 0 0 5px rgba(217, 83, 79, 0.2); }
 
-        .btn { background-color: #d9534f; color: white; border: none; padding: 15px 20px; font-size: 18px; border-radius: 4px; cursor: pointer; display: block; width: 100%; font-weight: bold; margin-top: 10px; }
-        .btn:hover { background-color: #c9302c; }
+        /* Fixed: Button color darkened from #d9534f for AA contrast */
+        .btn { background-color: #c62828; color: white; border: none; padding: 15px 20px; font-size: 18px; border-radius: 4px; cursor: pointer; display: block; width: 100%; font-weight: bold; margin-top: 10px; }
+        .btn:hover { background-color: #a52727; }
 
-        .btn-clear { background-color: #f0ad4e; color: white; }
-        .btn-clear:hover { background-color: #ec971f; }
+        /* Fixed: Clear button color darkened from #f0ad4e for AA contrast */
+        .btn-clear { background-color: #ac6300; color: white; }
+        .btn-clear:hover { background-color: #8f5300; }
 
-        .btn-delete { background-color: #6c757d; color: white; }
-        .btn-delete:hover { background-color: #5a6268; }
+        /* Fixed: Delete button color darkened for safe AA contrast */
+        .btn-delete { background-color: #545b62; color: white; }
+        .btn-delete:hover { background-color: #4e555b; }
 
         /* --- MOBILE OPTIMIZATIONS --- */
         @media (max-width: 700px) {
@@ -236,7 +239,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <body>
     <div class="global-nav" style="background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
         <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>
-        <a href="../index.php" style="color: #d9534f; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #d9534f; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
+        <a href="../index.php" style="color: #ff8a80; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #ff8a80; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
     </div>
 
     <div class="container">
@@ -248,76 +251,76 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h3>General Spec</h3>
                 <div class="grid">
                     <div class="form-group">
-                        <label>OE P/N *</label>
+                        <label for="oe_pn">OE P/N *</label>
                         <input type="text" name="oe_pn" id="oe_pn" required autocomplete="off" placeholder="Type OE, then Tab.">
                     </div>
                     <div class="form-group">
-                        <label>Shock P/N</label>
+                        <label for="shock_pn">Shock P/N</label>
                         <input type="text" name="shock_pn" id="shock_pn">
                     </div>
                     <div class="form-group">
-                        <label>Product Use</label>
+                        <label for="product_use">Product Use</label>
                         <input type="text" name="product_use" id="product_use" placeholder="e.g. ATV, Snow, SxS, Custom">
                     </div>
-                    <div class="form-group"><label>Location</label><input type="text" name="location" id="location" placeholder="e.g. Ski, Front, Rear"></div>
-                    <div class="form-group"><label>Rebuild Kit</label><input type="text" name="rebuild_kit" id="rebuild_kit"></div>
-                    <div class="form-group"><label>Service Kit</label><input type="text" name="service_kit" id="service_kit"></div>
-                    <div class="form-group"><label>IFP Depth</label><input type="text" name="ifp_depth" id="ifp_depth"></div>
-                    <div class="form-group"><label>Nitrogen PSI</label><input type="text" name="nitrogen_psi" id="nitrogen_psi"></div>
+                    <div class="form-group"><label for="location">Location</label><input type="text" name="location" id="location" placeholder="e.g. Ski, Front, Rear"></div>
+                    <div class="form-group"><label for="rebuild_kit">Rebuild Kit</label><input type="text" name="rebuild_kit" id="rebuild_kit"></div>
+                    <div class="form-group"><label for="service_kit">Service Kit</label><input type="text" name="service_kit" id="service_kit"></div>
+                    <div class="form-group"><label for="ifp_depth">IFP Depth</label><input type="text" name="ifp_depth" id="ifp_depth"></div>
+                    <div class="form-group"><label for="nitrogen_psi">Nitrogen PSI</label><input type="text" name="nitrogen_psi" id="nitrogen_psi"></div>
                 </div>
             </div>
 
             <div class="form-section">
                 <h3>Primary Hardware</h3>
                 <div class="grid">
-                    <div class="form-group"><label>Shaft</label><input type="text" name="shaft" id="shaft"></div>
-                    <div class="form-group"><label>Seal Head - Bearing Assembly</label><input type="text" name="seal_head" id="seal_head"></div>
-                    <div class="form-group"><label>BO Bumper</label><input type="text" name="bo_bumper" id="bo_bumper"></div>
-                    <div class="form-group"><label>Body</label><input type="text" name="body" id="body"></div>
-                    <div class="form-group"><label>Inner Body</label><input type="text" name="inner_body" id="inner_body"></div>
-                    <div class="form-group"><label>Body Cap</label><input type="text" name="body_cap" id="body_cap"></div>
-                    <div class="form-group"><label>Bearing Cap</label><input type="text" name="bearing_cap" id="bearing_cap"></div>
-                    <div class="form-group"><label>Metering Rod</label><input type="text" name="metering_rod" id="metering_rod"></div>
-                    <div class="form-group"><label>Rebound Adjuster</label><input type="text" name="rebound_adjuster" id="rebound_adjuster"></div>
-                    <div class="form-group"><label>Compression Adjuster</label><input type="text" name="comp_adjuster" id="comp_adjuster"></div>
-                    <div class="form-group"><label>Compression Adjuster Knob</label><input type="text" name="comp_adjuster_knob" id="comp_adjuster_knob"></div>
-                    <div class="form-group"><label>Compression Adjuster Screw</label><input type="text" name="comp_adjuster_screw" id="comp_adjuster_screw"></div>
+                    <div class="form-group"><label for="shaft">Shaft</label><input type="text" name="shaft" id="shaft"></div>
+                    <div class="form-group"><label for="seal_head">Seal Head - Bearing Assembly</label><input type="text" name="seal_head" id="seal_head"></div>
+                    <div class="form-group"><label for="bo_bumper">BO Bumper</label><input type="text" name="bo_bumper" id="bo_bumper"></div>
+                    <div class="form-group"><label for="body">Body</label><input type="text" name="body" id="body"></div>
+                    <div class="form-group"><label for="inner_body">Inner Body</label><input type="text" name="inner_body" id="inner_body"></div>
+                    <div class="form-group"><label for="body_cap">Body Cap</label><input type="text" name="body_cap" id="body_cap"></div>
+                    <div class="form-group"><label for="bearing_cap">Bearing Cap</label><input type="text" name="bearing_cap" id="bearing_cap"></div>
+                    <div class="form-group"><label for="metering_rod">Metering Rod</label><input type="text" name="metering_rod" id="metering_rod"></div>
+                    <div class="form-group"><label for="rebound_adjuster">Rebound Adjuster</label><input type="text" name="rebound_adjuster" id="rebound_adjuster"></div>
+                    <div class="form-group"><label for="comp_adjuster">Compression Adjuster</label><input type="text" name="comp_adjuster" id="comp_adjuster"></div>
+                    <div class="form-group"><label for="comp_adjuster_knob">Compression Adjuster Knob</label><input type="text" name="comp_adjuster_knob" id="comp_adjuster_knob"></div>
+                    <div class="form-group"><label for="comp_adjuster_screw">Compression Adjuster Screw</label><input type="text" name="comp_adjuster_screw" id="comp_adjuster_screw"></div>
                 </div>
             </div>
 
             <div class="form-section">
                 <h3>Reservoir Assembly</h3>
                 <div class="grid">
-                    <div class="form-group"><label>Reservoir</label><input type="text" name="reservoir" id="reservoir"></div>
-                    <div class="form-group"><label>Res. End Cap</label><input type="text" name="res_end_cap" id="res_end_cap"></div>
-                    <div class="form-group"><label>Hose</label><input type="text" name="hose" id="hose"></div>
-                    <div class="form-group"><label>Res. Clamp</label><input type="text" name="res_clamp" id="res_clamp"></div>
-                    <div class="form-group"><label>Bypass Screws</label><input type="text" name="bypass_screws" id="bypass_screws"></div>
+                    <div class="form-group"><label for="reservoir">Reservoir</label><input type="text" name="reservoir" id="reservoir"></div>
+                    <div class="form-group"><label for="res_end_cap">Res. End Cap</label><input type="text" name="res_end_cap" id="res_end_cap"></div>
+                    <div class="form-group"><label for="hose">Hose</label><input type="text" name="hose" id="hose"></div>
+                    <div class="form-group"><label for="res_clamp">Res. Clamp</label><input type="text" name="res_clamp" id="res_clamp"></div>
+                    <div class="form-group"><label for="bypass_screws">Bypass Screws</label><input type="text" name="bypass_screws" id="bypass_screws"></div>
                 </div>
             </div>
 
             <div class="form-section">
                 <h3>Body End Mounting</h3>
                 <div class="grid">
-                    <div class="form-group"><label>Body Bearing</label><input type="text" name="body_bearing" id="body_bearing"></div>
-                    <div class="form-group"><label>Body O-Ring</label><input type="text" name="body_oring" id="body_oring"></div>
-                    <div class="form-group"><label>Body Reducer</label><input type="text" name="body_reducer" id="body_reducer"></div>
-                    <div class="form-group"><label>Body Spacer</label><input type="text" name="body_spacer" id="body_spacer"></div>
-                    <div class="form-group"><label>Body Inner Sleeve</label><input type="text" name="body_inner_sleeve" id="body_inner_sleeve"></div>
-                    <div class="form-group"><label>Body Outer Sleeve</label><input type="text" name="body_outer_sleeve" id="body_outer_sleeve"></div>
+                    <div class="form-group"><label for="body_bearing">Body Bearing</label><input type="text" name="body_bearing" id="body_bearing"></div>
+                    <div class="form-group"><label for="body_oring">Body O-Ring</label><input type="text" name="body_oring" id="body_oring"></div>
+                    <div class="form-group"><label for="body_reducer">Body Reducer</label><input type="text" name="body_reducer" id="body_reducer"></div>
+                    <div class="form-group"><label for="body_spacer">Body Spacer</label><input type="text" name="body_spacer" id="body_spacer"></div>
+                    <div class="form-group"><label for="body_inner_sleeve">Body Inner Sleeve</label><input type="text" name="body_inner_sleeve" id="body_inner_sleeve"></div>
+                    <div class="form-group"><label for="body_outer_sleeve">Body Outer Sleeve</label><input type="text" name="body_outer_sleeve" id="body_outer_sleeve"></div>
                 </div>
             </div>
 
             <div class="form-section">
                 <h3>Shaft / Eyelet End Mounting</h3>
                 <div class="grid">
-                    <div class="form-group"><label>Shaft Eyelet</label><input type="text" name="shaft_eyelet" id="shaft_eyelet"></div>
-                    <div class="form-group"><label>Shaft Bearing</label><input type="text" name="shaft_bearing" id="shaft_bearing"></div>
-                    <div class="form-group"><label>Shaft O-Ring</label><input type="text" name="shaft_oring" id="shaft_oring"></div>
-                    <div class="form-group"><label>Shaft Reducer</label><input type="text" name="shaft_reducer" id="shaft_reducer"></div>
-                    <div class="form-group"><label>Shaft Spacer</label><input type="text" name="shaft_spacer" id="shaft_spacer"></div>
-                    <div class="form-group"><label>Shaft Inner Sleeve</label><input type="text" name="shaft_inner_sleeve" id="shaft_inner_sleeve"></div>
-                    <div class="form-group"><label>Shaft Outer Sleeve</label><input type="text" name="shaft_outer_sleeve" id="shaft_outer_sleeve"></div>
+                    <div class="form-group"><label for="shaft_eyelet">Shaft Eyelet</label><input type="text" name="shaft_eyelet" id="shaft_eyelet"></div>
+                    <div class="form-group"><label for="shaft_bearing">Shaft Bearing</label><input type="text" name="shaft_bearing" id="shaft_bearing"></div>
+                    <div class="form-group"><label for="shaft_oring">Shaft O-Ring</label><input type="text" name="shaft_oring" id="shaft_oring"></div>
+                    <div class="form-group"><label for="shaft_reducer">Shaft Reducer</label><input type="text" name="shaft_reducer" id="shaft_reducer"></div>
+                    <div class="form-group"><label for="shaft_spacer">Shaft Spacer</label><input type="text" name="shaft_spacer" id="shaft_spacer"></div>
+                    <div class="form-group"><label for="shaft_inner_sleeve">Shaft Inner Sleeve</label><input type="text" name="shaft_inner_sleeve" id="shaft_inner_sleeve"></div>
+                    <div class="form-group"><label for="shaft_outer_sleeve">Shaft Outer Sleeve</label><input type="text" name="shaft_outer_sleeve" id="shaft_outer_sleeve"></div>
                 </div>
             </div>
 

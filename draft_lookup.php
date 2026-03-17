@@ -1,5 +1,5 @@
 <?php
-// draft_lookup.php - Schema v4.0 (SQLite Optimized with 35-Column Array Mapping)
+// draft_lookup.php - Schema v4.0 (SQLite Optimized with 38-Column Array Mapping)
 
 $dbFile = 'system_files/carver_database.sqlite';
 
@@ -32,8 +32,6 @@ if ($search) {
         $pdo = new PDO('sqlite:' . $dbFile);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-        // We select the 38 columns in the exact order the original CSV had them
-        // to ensure $row[0], $row[1], etc. mapping remains identical.
         $query = "SELECT
                     oe_pn, shock_pn, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
                     shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
@@ -52,8 +50,6 @@ if ($search) {
         $searchTerm = "%$search%";
         $stmt->execute([':s' => $searchTerm]);
 
-        // FETCH_NUM is the secret sauce here—it returns a numbered array [0, 1, 2...]
-        // instead of named keys, so your existing display code doesn't need to change.
         while ($row = $stmt->fetch(PDO::FETCH_NUM)) {
             $results[] = $row;
         }
@@ -69,32 +65,34 @@ if ($search) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Carver Shock Lookup Tool - V4.0</title>
         <style>
-            /* --- EXACT CSS FROM YOUR PROVIDED VERSION --- */
             body { font-family: sans-serif; margin: 0; background-color: #f9f9f9; }
             .container { max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
 
             .search-box { text-align: center; margin-bottom: 20px; padding: 20px; background: #eee; border-radius: 8px; }
             input[type="text"] { padding: 10px; width: 60%; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
-            button { padding: 10px 20px; font-size: 16px; background-color: #d9534f; color: white; border: none; border-radius: 4px; cursor: pointer; }
-            button:hover { background-color: #c9302c; }
 
-            .result-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; border-left: 5px solid #d9534f; }
+            button { padding: 10px 20px; font-size: 16px; background-color: #c62828; color: white; border: none; border-radius: 4px; cursor: pointer; }
+            button:hover { background-color: #a52727; }
+
+            .result-card { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fff; border-left: 5px solid #c62828; }
             .result-header { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
             .oe-title { font-size: 1.4em; font-weight: bold; color: #333; }
 
             .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
             .spec-item { background: #f8f9fa; padding: 8px; border-radius: 4px; font-size: 0.9em; }
-            .spec-label { display: block; font-weight: bold; color: #555; font-size: 0.8em; margin-bottom: 2px; }
-            .spec-value { display: block; color: #333; font-weight: 500; }
+            .spec-label { display: block; font-weight: bold; color: #444; font-size: 0.8em; margin-bottom: 2px; }
+            .spec-value { display: block; color: #222; font-weight: 500; }
 
-            .part-link { color: #d9534f; text-decoration: none; border-bottom: 1px dotted #d9534f; }
-            .part-link:hover { background-color: #d9534f; color: white; text-decoration: none; border-bottom: none; }
+            .part-link { color: #c62828; text-decoration: none; border-bottom: 1px dotted #c62828; }
+            .part-link:hover { background-color: #c62828; color: white; text-decoration: none; border-bottom: none; }
             .part-link.dead-link{ color: #000!important; text-decoration: none!important; border-bottom: none!important; cursor: default!important; pointer-events: none; }
 
-            .empty { color: #ccc; font-style: italic; }
+            /* Fixed: Darkened empty text color to #595959 to ensure AA contrast against #f8f9fa background */
+            .empty { color: #595959; font-style: italic; }
 
             .mounting-box { grid-column: 1 / -1; background: #fdfdfe; border: 1px solid #e9ecef; padding: 10px; border-radius: 4px; margin-top: 5px; }
-            .section-title { display: block; font-size: 0.85em; font-weight: bold; color: #666; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #eee; padding-bottom: 3px; }
+
+            .section-title { display: block; font-size: 0.85em; font-weight: bold; color: #595959; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #eee; padding-bottom: 3px; }
             .sleeve-pair { display: flex; gap: 10px; flex-wrap: wrap; }
             .sleeve-pair > div { background: #fff; padding: 5px; border: 1px solid #eee; border-radius: 3px; }
 
@@ -255,11 +253,11 @@ if ($search) {
     <body>
         <div class="global-nav" style="background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
             <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>
-            <a href="index.php" style="color: #d9534f; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #d9534f; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
+            <a href="index.php" style="color: #ff8a80; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #ff8a80; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
         </div>
 
         <div class="container">
-            <h1 style="text-align: center; color: #d9534f; margin-bottom: 20px;">Carver Shock Lookup Tool</h1>
+            <h1 style="text-align: center; color: #c62828; margin-bottom: 20px;">Carver Shock Lookup Tool</h1>
 
             <div class="search-box">
                 <h2>Shock Lookup Search</h2>
@@ -270,11 +268,11 @@ if ($search) {
             </div>
 
             <?php if (isset($dbError)) : ?>
-                <div style="color: red; background: #fee; padding: 10px; border-radius: 4px; margin-bottom: 10px;"><?= $dbError ?></div>
+                <div style="color: #c62828; background: #fee; padding: 10px; border-radius: 4px; margin-bottom: 10px;"><?= $dbError ?></div>
             <?php endif; ?>
 
             <?php if ($search && empty($results)) : ?>
-                <div style="text-align:center; padding: 20px; color: #666;">
+                <div style="text-align:center; padding: 20px; color: #444;">
                     No results found for "<strong><?= htmlspecialchars($search) ?></strong>".
                 </div>
             <?php endif; ?>
@@ -285,11 +283,11 @@ if ($search) {
                         <div class="result-header">
                             <div style="position: relative;">
                                 <a href="mailto:christopherrcarlson101@gmail.com?subject=Data Error Report: SKU <?= htmlspecialchars($row[0]) ?>"
-                                    style="position: absolute; right: 0; top: 0; font-size: 0.8em; color: #888; text-decoration: underline;">
+                                    style="position: absolute; right: 0; top: 0; font-size: 0.8em; color: #595959; text-decoration: underline;">
                                     Report Data Error
                                 </a>
                                 <div class="oe-title">OE: <?= display_clean($row[0]) ?></div>
-                                <div style="color: #666; font-size: 1.1em;">Shock P/N: <strong><?= display_clean($row[1]) ?></strong></div>
+                                <div style="color: #444; font-size: 1.1em;">Shock P/N: <strong><?= display_clean($row[1]) ?></strong></div>
 
                                 <div style="margin-top:5px; font-style: italic; color: #000;">
                                     <?php
