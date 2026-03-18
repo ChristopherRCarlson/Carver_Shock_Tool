@@ -173,7 +173,7 @@ if (!empty($oe_pn)) {
                 <div class="log-entry">
                     <div class="log-header">
                         <span class="<?php echo htmlspecialchars($log['action']); ?>"><?php echo htmlspecialchars($log['action']); ?></span>
-                        <span><?php echo htmlspecialchars($log['timestamp']); ?> (IP: <?php echo htmlspecialchars($log['changed_by']); ?>)</span>
+                        <span><?php echo htmlspecialchars(date('m/d/Y g:i A', strtotime($log['timestamp']))); ?> (IP: <?php echo htmlspecialchars($log['changed_by']); ?>)</span>
                     </div>
                     <div class="log-body">
                             <?php if ($log['action'] === 'CREATE') : ?>
