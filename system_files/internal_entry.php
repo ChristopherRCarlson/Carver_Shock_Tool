@@ -24,7 +24,7 @@ if (isset($_GET['status']) && isset($_GET['oe'])) {
 }
 
 // Helper: Sanitizer
-function clean_input($data)
+function clean_input($data): string
 {
     $val = trim($data ?? '');
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) {

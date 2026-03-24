@@ -3,7 +3,7 @@
 // system_files/audit_logger.php
 
 // THE FIX: Added $pdo = null to the end of the function arguments
-function logAudit($tableName, $recordId, $action, $oldData = null, $newData = null, $pdo = null)
+function logAudit($tableName, $recordId, $action, $oldData = null, $newData = null, $pdo = null): void
 {
     $dbFile = __DIR__ . '/carver_database.sqlite';
 

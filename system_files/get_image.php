@@ -8,6 +8,9 @@ header("Access-Control-Allow-Methods: GET, HEAD");
 header("Access-Control-Expose-Headers: X-Cache");
 
 // The CORB Fix
+/**
+ * @return never
+ */
 function send_404_image()
 {
     header("Content-Type: image/png");
@@ -156,7 +159,6 @@ if (stripos($html, '0 products found') !== false || stripos($html, 'no products 
 
 // IF WE MADE IT PAST THE TRAP, THE PRODUCT DEFINITIVELY EXISTS.
 
-$finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
 $isProductPage = (strpos($finalUrl, 'productid=') !== false || strpos($finalUrl, '.html') !== false) && strpos($finalUrl, 'target=search') === false;
 
 // List-Jump Logic (Upgraded for X-Cart Clean URLs)
@@ -173,7 +175,6 @@ if (!$isProductPage) {
         }
         curl_setopt($ch, CURLOPT_URL, $firstResultUrl);
         $html = curl_exec($ch);
-        $finalUrl = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
         $isProductPage = true;
     }
 }

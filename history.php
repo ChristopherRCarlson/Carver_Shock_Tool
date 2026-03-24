@@ -184,7 +184,7 @@ if (!empty($oe_pn)) {
                                         <th>Value Entered</th>
                                     </tr>
                                     <?php
-                                    for ($i = 0; $i < count($columns); $i++) {
+                                    foreach ($columns as $i => $colName) {
                                         $val = $log['new_data'][$i] ?? '';
                                         if ($val !== '') { // Only show fields that actually have data
                                             echo "<tr>";
@@ -204,7 +204,7 @@ if (!empty($oe_pn)) {
                                         <th>Deleted Value</th>
                                     </tr>
                                     <?php
-                                    for ($i = 0; $i < count($columns); $i++) {
+                                    foreach ($columns as $i => $colName) {
                                         $val = $log['old_data'][$i] ?? '';
                                         if ($val !== '') {
                                             echo "<tr>";
@@ -227,7 +227,7 @@ if (!empty($oe_pn)) {
                                     <?php
                                     // Compare old and new arrays
                                     $changesFound = false;
-                                    for ($i = 0; $i < count($columns); $i++) {
+                                    foreach ($columns as $i => $colName) {
                                         $oldVal = $log['old_data'][$i] ?? '';
                                         $newVal = $log['new_data'][$i] ?? '';
 

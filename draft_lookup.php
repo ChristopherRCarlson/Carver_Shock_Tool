@@ -4,7 +4,7 @@
 $dbFile = 'system_files/carver_database.sqlite';
 
 // 1. Standard Sanitizer (For non-linked text like Description/Headers)
-function display_clean($data)
+function display_clean($data): string
 {
     $val = trim($data ?? '');
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) {
@@ -14,7 +14,7 @@ function display_clean($data)
 }
 
 // 2. Linked Sanitizer (For searchable parts)
-function display_linked_part($data)
+function display_linked_part($data): string
 {
     $val = trim($data ?? '');
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val) || $val === '') {
