@@ -14,7 +14,7 @@ $columns = [
     "Compression Adjuster", "Compression Adjuster Knob", "Compression Adjuster Screw",
     "Hose", "Res Clamp", "Bypass Screws", "Body Bearing", "Body O-Ring", "Body Reducer", "Body Spacer",
     "Body Inner Sleeve", "Body Outer Sleeve", "Shaft Eyelet", "Shaft Bearing", "Shaft O-Ring",
-    "Shaft Reducer", "Shaft Spacer", "Shaft Inner Sleeve", "Shaft Outer Sleeve"
+    "Shaft Reducer", "Shaft Spacer", "Shaft Inner Sleeve", "Shaft Outer Sleeve", "Brand"
 ];
 
 if (!empty($oe_pn)) {

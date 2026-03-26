@@ -65,6 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $newData = [
                 ':oe_pn' => $oeNum,
                 ':shock_pn' => clean_input($_POST['shock_pn'] ?? ''),
+                ':brand' => clean_input($_POST['brand'] ?? ''),
                 ':product_use' => clean_input($_POST['product_use'] ?? ''),
                 ':location' => clean_input($_POST['location'] ?? ''),
                 ':rebuild_kit' => clean_input($_POST['rebuild_kit'] ?? ''),
@@ -106,7 +107,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($existingRow) {
                 // UPDATE EXISTING SHOCK
                 $updateQuery = "UPDATE shocks SET
-                    shock_pn = :shock_pn, product_use = :product_use, location = :location, rebuild_kit = :rebuild_kit,
+                    Brand = :brand, shock_pn = :shock_pn, product_use = :product_use, location = :location, rebuild_kit = :rebuild_kit,
                     service_kit = :service_kit, ifp_depth = :ifp_depth, nitrogen_psi = :nitrogen_psi, shaft = :shaft,
                     seal_head = :seal_head, bo_bumper = :bo_bumper, body = :body, inner_body = :inner_body,
                     body_cap = :body_cap, bearing_cap = :bearing_cap, reservoir = :reservoir, res_end_cap = :res_end_cap,
@@ -127,14 +128,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 // INSERT NEW SHOCK
                 $insertQuery = "INSERT INTO shocks (
-                    oe_pn, shock_pn, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
+                    oe_pn, shock_pn, Brand, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
                     shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
                     metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose,
                     res_clamp, bypass_screws, body_bearing, body_oring, body_reducer, body_spacer, body_inner_sleeve,
                     body_outer_sleeve, shaft_eyelet, shaft_bearing, shaft_oring, shaft_reducer, shaft_spacer,
                     shaft_inner_sleeve, shaft_outer_sleeve
                 ) VALUES (
-                    :oe_pn, :shock_pn, :product_use, :location, :rebuild_kit, :service_kit, :ifp_depth, :nitrogen_psi,
+                    :oe_pn, :shock_pn, :brand, :product_use, :location, :rebuild_kit, :service_kit, :ifp_depth, :nitrogen_psi,
                     :shaft, :seal_head, :bo_bumper, :body, :inner_body, :body_cap, :bearing_cap, :reservoir, :res_end_cap,
                     :metering_rod, :rebound_adjuster, :comp_adjuster, :comp_adjuster_knob, :comp_adjuster_screw, :hose,
                     :res_clamp, :bypass_screws, :body_bearing, :body_oring, :body_reducer, :body_spacer, :body_inner_sleeve,
@@ -259,6 +260,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" name="shock_pn" id="shock_pn">
                     </div>
                     <div class="form-group">
+                        <label for="brand">Brand</label>
+                        <input type="text" name="Brand" id="brand">
+                    </div>
+                    <div class="form-group">
                         <label for="product_use">Product Use</label>
                         <input type="text" name="product_use" id="product_use" placeholder="e.g. ATV, Snow, SxS, Custom">
                     </div>
@@ -353,7 +358,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                         const shockData = result.assoc_data || result;
 
                                         for (const [key, value] of Object.entries(shockData)) {
-                                            const inputField = document.querySelector(`[name="${key}"]`);
+                                            const inputField = document.querySelector(`[name="${key}"]`) || document.querySelector(`[name="${key.toLowerCase()}"]`);
                                             if (inputField && key !== 'oe_pn') {
                                                 inputField.value = value || '';
                                             }

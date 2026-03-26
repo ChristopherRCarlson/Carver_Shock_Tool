@@ -37,14 +37,15 @@ if ($search) {
                     shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
                     metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose, res_clamp, bypass_screws, body_bearing, body_oring,
                     body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing,
-                    shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve
+                    shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve, Brand
                   FROM shocks
                   WHERE oe_pn LIKE :s
                      OR shock_pn LIKE :s
                      OR product_use LIKE :s
                      OR location LIKE :s
                      OR rebuild_kit LIKE :s
-                     OR service_kit LIKE :s";
+                     OR service_kit LIKE :s
+                     OR Brand LIKE :s";
 
         $stmt = $pdo->prepare($query);
         $searchTerm = "%$search%";
@@ -63,6 +64,7 @@ if ($search) {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="format-detection" content="telephone=no, date=no, address=no">
         <title>Carver Shock Lookup Tool - V4.0</title>
         <style>
             body { font-family: sans-serif; margin: 0; background-color: #f9f9f9; }
@@ -292,17 +294,20 @@ if ($search) {
                                 <div style="margin-top:5px; font-style: italic; color: #000;">
                                     <?php
                                     $desc_parts = [];
-                                    if (trim($row[2])) {
-                                        $desc_parts[] = "Use: " . trim($row[2]);
+                                    if (trim($row[38] ?? '')) {
+                                        $desc_parts[] = "Brand: " . trim($row[38] ?? '');
                                     }
-                                    if (trim($row[3])) {
-                                        $desc_parts[] = "Position: " . trim($row[3]);
+                                    if (trim($row[2] ?? '')) {
+                                        $desc_parts[] = "Use: " . trim($row[2] ?? '');
                                     }
-                                    if (trim($row[6])) {
-                                        $desc_parts[] = "IFP: " . trim($row[6]);
+                                    if (trim($row[3] ?? '')) {
+                                        $desc_parts[] = "Position: " . trim($row[3] ?? '');
                                     }
-                                    if (trim($row[7])) {
-                                        $desc_parts[] = "Nitrogen: " . trim($row[7]) . " PSI";
+                                    if (trim($row[6] ?? '')) {
+                                        $desc_parts[] = "IFP: " . trim($row[6] ?? '');
+                                    }
+                                    if (trim($row[7] ?? '')) {
+                                        $desc_parts[] = "Nitrogen: " . trim($row[7] ?? '') . " PSI";
                                     }
                                     echo empty($desc_parts) ? '<span class="empty">-</span>' : htmlspecialchars(implode(" | ", $desc_parts));
                                     ?>
