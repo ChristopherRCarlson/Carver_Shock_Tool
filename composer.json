@@ -2,5 +2,10 @@
     "require-dev": {
         "squizlabs/php_codesniffer": "^4.0",
         "vimeo/psalm": "^6.15"
+    },
+    "scripts": {
+        "check-style": "phpcs --standard=PSR12 --ignore=vendor/ .",
+        "fix-style": "phpcbf --standard=PSR12 --ignore=vendor/ .",
+        "analyze": "psalm"
     }
 }

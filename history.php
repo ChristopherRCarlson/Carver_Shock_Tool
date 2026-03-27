@@ -188,7 +188,7 @@ if (!empty($oe_pn)) {
                                         $val = $log['new_data'][$i] ?? '';
                                         if ($val !== '') { // Only show fields that actually have data
                                             echo "<tr>";
-                                            echo "<td><strong>{$columns[$i]}</strong></td>";
+                                            echo "<td><strong>{$colName}</strong></td>";
                                             echo "<td class='new-val'>" . htmlspecialchars($val) . "</td>";
                                             echo "</tr>";
                                         }
@@ -208,7 +208,7 @@ if (!empty($oe_pn)) {
                                         $val = $log['old_data'][$i] ?? '';
                                         if ($val !== '') {
                                             echo "<tr>";
-                                            echo "<td><strong>{$columns[$i]}</strong></td>";
+                                            echo "<td><strong>{$colName}</strong></td>";
                                             echo "<td class='old-val'>" . htmlspecialchars($val) . "</td>";
                                             echo "</tr>";
                                         }
@@ -234,7 +234,7 @@ if (!empty($oe_pn)) {
                                         if ($oldVal !== $newVal) {
                                             $changesFound = true;
                                             echo "<tr>";
-                                            echo "<td><strong>{$columns[$i]}</strong></td>";
+                                            echo "<td><strong>{$colName}</strong></td>";
                                             echo "<td class='old-val'>" . htmlspecialchars($oldVal) . "</td>";
                                             echo "<td class='new-val'>" . htmlspecialchars($newVal) . "</td>";
                                             echo "</tr>";

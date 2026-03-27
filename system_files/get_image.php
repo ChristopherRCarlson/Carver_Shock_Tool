@@ -159,6 +159,8 @@ if (stripos($html, '0 products found') !== false || stripos($html, 'no products 
 
 // IF WE MADE IT PAST THE TRAP, THE PRODUCT DEFINITIVELY EXISTS.
 
+$finalUrl = $finalUrl ?? '';
+
 $isProductPage = (strpos($finalUrl, 'productid=') !== false || strpos($finalUrl, '.html') !== false) && strpos($finalUrl, 'target=search') === false;
 
 // List-Jump Logic (Upgraded for X-Cart Clean URLs)

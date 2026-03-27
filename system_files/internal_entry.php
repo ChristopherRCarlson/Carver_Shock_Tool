@@ -65,7 +65,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $newData = [
                 ':oe_pn' => $oeNum,
                 ':shock_pn' => clean_input($_POST['shock_pn'] ?? ''),
-                ':brand' => clean_input($_POST['brand'] ?? ''),
                 ':product_use' => clean_input($_POST['product_use'] ?? ''),
                 ':location' => clean_input($_POST['location'] ?? ''),
                 ':rebuild_kit' => clean_input($_POST['rebuild_kit'] ?? ''),
@@ -101,7 +100,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ':shaft_reducer' => clean_input($_POST['shaft_reducer'] ?? ''),
                 ':shaft_spacer' => clean_input($_POST['shaft_spacer'] ?? ''),
                 ':shaft_inner_sleeve' => clean_input($_POST['shaft_inner_sleeve'] ?? ''),
-                ':shaft_outer_sleeve' => clean_input($_POST['shaft_outer_sleeve'] ?? '')
+                ':shaft_outer_sleeve' => clean_input($_POST['shaft_outer_sleeve'] ?? ''),
+                ':brand' => clean_input($_POST['Brand'] ?? '')
             ];
 
             if ($existingRow) {
