@@ -44,7 +44,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         // Check if the shock already exists
-        $checkStmt = $pdo->prepare("SELECT * FROM shocks WHERE oe_pn = :oe_pn LIMIT 1");
+        $fetchOldQuery = "SELECT oe_pn, shock_pn, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi, shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap, metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose, res_clamp, bypass_screws, body_bearing, body_oring, body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing, shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve, Brand FROM shocks WHERE oe_pn = :oe_pn";
+
+        $checkStmt = $pdo->prepare($fetchOldQuery);
         $checkStmt->execute([':oe_pn' => $oeNum]);
         $existingRow = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
