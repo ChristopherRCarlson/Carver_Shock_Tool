@@ -23,5 +23,5 @@ Reports should include:
 ## Security Architecture Notes
 
 - **Internal Only:** This tool is designed for LAN deployment. It should never be exposed to the public internet.
-- **Audit Logging:** All changes to the CSV database are logged via `system_files/audit_logger.php`.
+- **Audit Logging:** All changes to the SQLite database are logged via `system_files/audit_logger.php`.
 - **Data Sanitization:** The tool uses `clean_input()` to strip legacy Excel artifacts and whitespace.
