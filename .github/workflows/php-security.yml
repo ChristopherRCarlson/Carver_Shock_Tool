@@ -12,13 +12,14 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          tools: cs2pr, phpcs, psalm
+          tools: cs2pr
+          coverage: none
 
       - name: Install Dependencies
         run: composer install --no-progress --prefer-dist
 
       - name: Run PHP CodeSniffer (Code Quality)
-        run: phpcs -n --standard=PSR12 --ignore=vendor/ .
+        run: composer run check-style -- -n
 
       - name: Run Psalm Security/Taint Analysis
         run: vendor/bin/psalm --taint-analysis
