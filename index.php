@@ -106,6 +106,11 @@ if (file_exists($dbFile)) {
                 <small>Add/Update shock information</small>
             </a>
 
+            <a href="system_files/accessory_manager.php" class="nav-card">
+                <span>🔧 ACCESSORY MANAGER</span>
+                <small>Manage decals, tools, and upgrades</small>
+            </a>
+
             <a href="history.php" class="nav-card">
                 <span>📜 VIEW HISTORY</span>
                 <small>Search audit logs</small>
