@@ -17,32 +17,32 @@ try {
         try {
             // --- ADD LOGIC ---
             if ($action === 'add_decal') {
-                $pn = trim($_POST['part_number']);
-                $desc = trim($_POST['description']);
+                $pn = trim((string)($_POST['part_number'] ?? ''));
+                $desc = trim((string)($_POST['description'] ?? ''));
                 if ($pn) {
                     $stmt = $pdo->prepare("INSERT INTO decals (part_number, description) VALUES (?, ?)");
                     $stmt->execute([$pn, $desc]);
                     logAudit('decals', $pn, 'CREATE', null, ['part_number' => $pn, 'description' => $desc], $pdo);
-                    $message = "<div class='success'>Success: Decal '$pn' added to catalog.</div>";
+                    $message = "<div class='success'>Success: Decal '" . htmlspecialchars($pn) . "' added to catalog.</div>";
                 }
             } elseif ($action === 'add_tool') {
-                $pn = trim($_POST['part_number']);
-                $desc = trim($_POST['description']);
-                $type = trim($_POST['tool_type']);
+                $pn = trim((string)($_POST['part_number'] ?? ''));
+                $desc = trim((string)($_POST['description'] ?? ''));
+                $type = trim((string)($_POST['tool_type'] ?? ''));
                 if ($pn) {
                     $stmt = $pdo->prepare("INSERT INTO tools (part_number, description, tool_type) VALUES (?, ?, ?)");
                     $stmt->execute([$pn, $desc, $type]);
                     logAudit('tools', $pn, 'CREATE', null, ['part_number' => $pn, 'description' => $desc, 'tool_type' => $type], $pdo);
-                    $message = "<div class='success'>Success: Tool '$pn' added to catalog.</div>";
+                    $message = "<div class='success'>Success: Tool '" . htmlspecialchars($pn) . "' added to catalog.</div>";
                 }
             } elseif ($action === 'add_upgrade') {
-                $pn = trim($_POST['part_number']);
-                $desc = trim($_POST['description']);
+                $pn = trim((string)($_POST['part_number'] ?? ''));
+                $desc = trim((string)($_POST['description'] ?? ''));
                 if ($pn) {
                     $stmt = $pdo->prepare("INSERT INTO upgrades (part_number, description) VALUES (?, ?)");
                     $stmt->execute([$pn, $desc]);
                     logAudit('upgrades', $pn, 'CREATE', null, ['part_number' => $pn, 'description' => $desc], $pdo);
-                    $message = "<div class='success'>Success: Upgrade '$pn' added to catalog.</div>";
+                    $message = "<div class='success'>Success: Upgrade '" . htmlspecialchars($pn) . "' added to catalog.</div>";
                 }
                 // --- DELETE LOGIC ---
             } elseif (in_array($action, ['delete_decal', 'delete_tool', 'delete_upgrade'])) {
@@ -52,13 +52,14 @@ try {
                 // Fetch info for audit log before deleting
                 $stmt = $pdo->prepare("SELECT * FROM $table WHERE id = ?");
                 $stmt->execute([$id]);
+                /** @var array<string, mixed>|false $item */
                 $item = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 if ($item) {
                     $delStmt = $pdo->prepare("DELETE FROM $table WHERE id = ?");
                     $delStmt->execute([$id]);
                     logAudit($table, $item['part_number'], 'DELETE', $item, null, $pdo);
-                    $message = "<div class='success' style='background-color:#fff3cd; color:#856404; border-color:#ffeeba;'>Item '{$item['part_number']}' deleted from $table catalog. All linked shock mappings were removed.</div>";
+                    $message = "<div class='success' style='background-color:#fff3cd; color:#856404; border-color:#ffeeba;'>Item '" . htmlspecialchars((string)$item['part_number']) . "' deleted from $table catalog. All linked shock mappings were removed.</div>";
                 }
             }
         } catch (PDOException $e) {
@@ -121,7 +122,11 @@ try {
 
     <div class="container">
         <h1>Master Accessory Catalog Manager</h1>
-        <?php echo $message; ?>
+        <?php
+
+/* @psalm-suppress TaintedHtml */
+
+        echo $message; ?>
 
         <div class="manager-grid">
 
