@@ -1,5 +1,5 @@
 <?php
-// internal_entry.php - V6.5 (SQLite Integrated)
+// internal_entry.php - V6.6 (Decals, Tools, and Upgrades Integration)
 
 $dbFile = __DIR__ . '/carver_database.sqlite';
 $message = "";
@@ -23,8 +23,17 @@ if (isset($_GET['status']) && isset($_GET['oe'])) {
     }
 }
 
+// Display Accessory Errors (Orphans Prevented)
+if (isset($_GET['acc_err'])) {
+    $errors = explode("|", $_GET['acc_err']);
+    $message .= "<div class='error' style='background-color: #fff3cd; color: #856404; border-color: #ffeeba;'>
+        <b>Warning: Missing Accessories (Orphans Prevented):</b><br>"
+        . implode("<br>", array_map('htmlspecialchars', $errors)) .
+        "<br><small>These specific items were skipped because their Part Numbers don't exist in the database. All other valid data was saved.</small></div>";
+}
+
 // Helper: Sanitizer
-function clean_input($data): string
+function clean_input(?string $data): string
 {
     $val = trim($data ?? '');
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) {
@@ -38,13 +47,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $actionType = $_POST['form_action'] ?? 'save';
 
     $status = 'error';
+    $accErrors = [];
 
     try {
         $pdo = new PDO('sqlite:' . $dbFile);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
         // Check if the shock already exists
-        $fetchOldQuery = "SELECT oe_pn, shock_pn, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi, shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap, metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose, res_clamp, bypass_screws, body_bearing, body_oring, body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing, shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve, Brand FROM shocks WHERE oe_pn = :oe_pn";
+        $fetchOldQuery = "SELECT * FROM shocks WHERE oe_pn = :oe_pn";
 
         $checkStmt = $pdo->prepare($fetchOldQuery);
         $checkStmt->execute([':oe_pn' => $oeNum]);
@@ -151,6 +161,82 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 logAudit('shocks', $oeNum, 'CREATE', null, $newData, $pdo);
                 $status = 'added';
             }
+
+            // --- PROCESS ACCESSORIES (Milestone 5) ---
+            $stmtId = $pdo->prepare("SELECT id FROM shocks WHERE oe_pn = :oe");
+            $stmtId->execute([':oe' => $oeNum]);
+            $shock_id = $stmtId->fetchColumn();
+
+            if ($shock_id) {
+                // 1. Process Decals
+                if (!empty($_POST['decal_ids'])) {
+                    foreach ($_POST['decal_ids'] as $index => $part_number) {
+                        $part_number = trim($part_number);
+                        if (empty($part_number)) {
+                            continue;
+                        }
+                        $note = trim($_POST['decal_notes'][$index] ?? '');
+
+                        $stmt = $pdo->prepare("SELECT id FROM decals WHERE part_number = :pn");
+                        $stmt->execute([':pn' => $part_number]);
+                        $decal_id = $stmt->fetchColumn();
+
+                        if ($decal_id) {
+                            $ins = $pdo->prepare("INSERT INTO shock_decals_mapping (shock_id, decal_id, placement_note) VALUES (?, ?, ?)");
+                            $ins->execute([$shock_id, $decal_id, $note]);
+                            logAudit('shock_decals_mapping', $oeNum, 'CREATE', null, ['shock_id' => $shock_id, 'decal_id' => $decal_id, 'placement_note' => $note], $pdo);
+                        } else {
+                            $accErrors[] = "Decal PN: '$part_number'";
+                        }
+                    }
+                }
+
+                // 2. Process Tools
+                if (!empty($_POST['tool_ids'])) {
+                    foreach ($_POST['tool_ids'] as $index => $part_number) {
+                        $part_number = trim($part_number);
+                        if (empty($part_number)) {
+                            continue;
+                        }
+                        $note = trim($_POST['tool_notes'][$index] ?? '');
+
+                        $stmt = $pdo->prepare("SELECT id FROM tools WHERE part_number = :pn");
+                        $stmt->execute([':pn' => $part_number]);
+                        $tool_id = $stmt->fetchColumn();
+
+                        if ($tool_id) {
+                            $ins = $pdo->prepare("INSERT INTO shock_tools_mapping (shock_id, tool_id, usage_note) VALUES (?, ?, ?)");
+                            $ins->execute([$shock_id, $tool_id, $note]);
+                            logAudit('shock_tools_mapping', $oeNum, 'CREATE', null, ['shock_id' => $shock_id, 'tool_id' => $tool_id, 'usage_note' => $note], $pdo);
+                        } else {
+                            $accErrors[] = "Tool PN: '$part_number'";
+                        }
+                    }
+                }
+
+                // 3. Process Upgrades
+                if (!empty($_POST['upgrade_ids'])) {
+                    foreach ($_POST['upgrade_ids'] as $index => $part_number) {
+                        $part_number = trim($part_number);
+                        if (empty($part_number)) {
+                            continue;
+                        }
+                        $note = trim($_POST['upgrade_notes'][$index] ?? '');
+
+                        $stmt = $pdo->prepare("SELECT id FROM upgrades WHERE part_number = :pn");
+                        $stmt->execute([':pn' => $part_number]);
+                        $upgrade_id = $stmt->fetchColumn();
+
+                        if ($upgrade_id) {
+                            $ins = $pdo->prepare("INSERT INTO shock_upgrades_mapping (shock_id, upgrade_id, note) VALUES (?, ?, ?)");
+                            $ins->execute([$shock_id, $upgrade_id, $note]);
+                            logAudit('shock_upgrades_mapping', $oeNum, 'CREATE', null, ['shock_id' => $shock_id, 'upgrade_id' => $upgrade_id, 'note' => $note], $pdo);
+                        } else {
+                            $accErrors[] = "Upgrade PN: '$part_number'";
+                        }
+                    }
+                }
+            }
         }
     } catch (PDOException $e) {
         error_log("Database Error: " . $e->getMessage());
@@ -159,6 +245,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     $safe_redirect = basename(__FILE__);
     $header_str = "Location: " . $safe_redirect . "?status=" . urlencode($status) . "&oe=" . urlencode($oeNum);
+
+    if (!empty($accErrors)) {
+        $header_str .= "&acc_err=" . urlencode(implode("|", $accErrors));
+    }
 
     /** @psalm-suppress TaintedHeader, TaintedInput */
     header($header_str);
@@ -199,6 +289,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         .btn-delete { background-color: #545b62; color: white; }
         .btn-delete:hover { background-color: #4e555b; }
 
+        /* Milestone 5 Additions */
+        .btn-add-acc { background-color: #17a2b8; color: white; padding: 8px; font-size: 14px; margin-top: 5px; }
+        .btn-add-acc:hover { background-color: #138496; }
+
+        /* Dynamic Row Styling (Milestone 5) */
+        .accessory-column h4 { margin-top: 0; margin-bottom: 10px; color: #444; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+        .accessory-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .accessory-row input { flex: 1; min-width: 0; padding: 8px; font-size: 14px; }
+
         /* --- MOBILE OPTIMIZATIONS --- */
         @media (max-width: 700px) {
             .container { margin: 10px; padding: 20px; width: auto; }
@@ -207,6 +306,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             .global-nav span { font-size: 1em; }
             h1 { font-size: 1.5em; }
             .form-section { padding: 15px; }
+            .accessory-row { flex-direction: column; }
         }
 
         /* --- PROFESSIONAL PRINT ENGINE --- */
@@ -331,6 +431,29 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 </div>
             </div>
 
+            <div class="form-section" id="accessories-section">
+                <h3>Accessories & Upgrades</h3>
+                <div class="grid">
+                    <div class="accessory-column">
+                        <h4>Decals</h4>
+                        <div id="decals-container"></div>
+                        <button type="button" class="btn btn-add-acc" onclick="addAccessoryRow('decals', 'decal', 'Decal Part Number', 'Placement Note')">+ Add Decal</button>
+                    </div>
+
+                    <div class="accessory-column">
+                        <h4>Tools</h4>
+                        <div id="tools-container"></div>
+                        <button type="button" class="btn btn-add-acc" onclick="addAccessoryRow('tools', 'tool', 'Tool Part Number', 'Usage Note')">+ Add Tool</button>
+                    </div>
+
+                    <div class="accessory-column">
+                        <h4>Upgrades</h4>
+                        <div id="upgrades-container"></div>
+                        <button type="button" class="btn btn-add-acc" onclick="addAccessoryRow('upgrades', 'upgrade', 'Upgrade Part Number', 'General Note')">+ Add Upgrade</button>
+                    </div>
+                </div>
+            </div>
+
             <div style="display: flex; gap: 15px; margin-top: 20px;">
                 <button type="submit" name="form_action" value="save" class="btn" style="flex: 2;">Save / Overwrite Shock Entry</button>
                 <button type="button" class="btn btn-clear" style="flex: 1;" onclick="document.getElementById('entryForm').reset();">Clear Form</button>
@@ -339,7 +462,33 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
 
         <script>
+            // Milestone 5 Dynamic Inputs Logic
+            function addAccessoryRow(containerId, prefix, idPlaceholder, notePlaceholder) {
+                const container = document.getElementById(containerId + '-container');
+                const row = document.createElement('div');
+                row.className = 'accessory-row';
+
+                const idInput = document.createElement('input');
+                idInput.type = 'text';
+                idInput.name = prefix + '_ids[]';
+                idInput.placeholder = idPlaceholder;
+
+                const noteInput = document.createElement('input');
+                noteInput.type = 'text';
+                noteInput.name = prefix + '_notes[]';
+                noteInput.placeholder = notePlaceholder;
+
+                row.appendChild(idInput);
+                row.appendChild(noteInput);
+                container.appendChild(row);
+            }
+
             document.addEventListener('DOMContentLoaded', function() {
+
+                // Add initial empty rows for UX
+                addAccessoryRow('decals', 'decal', 'Decal Part Number', 'Placement Note');
+                addAccessoryRow('tools', 'tool', 'Tool Part Number', 'Usage Note');
+                addAccessoryRow('upgrades', 'upgrade', 'Upgrade Part Number', 'General Note');
 
                 // --- 1. AUTO-FILL API LOGIC ---
                 const oeInput = document.getElementById('oe_pn');
@@ -365,6 +514,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                 inputField.value = value || '';
                                             }
                                         }
+                                        // Note: Mapping data would ideally be loaded via API here in a future update.
                                     }
                                 }
                             })
