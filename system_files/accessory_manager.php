@@ -46,8 +46,19 @@ try {
                 }
                 // --- DELETE LOGIC ---
             } elseif (in_array($action, ['delete_decal', 'delete_tool', 'delete_upgrade'])) {
-                $id = (int)$_POST['delete_id'];
-                $table = str_replace('delete_', '', $action) . 's'; // e.g., 'decals'
+                $id = (int)($_POST['delete_id'] ?? 0);
+
+                // Breaking the taint chain: Map the input to hardcoded literals
+                $tableMap = [
+                    'delete_decal'   => 'decals',
+                    'delete_tool'    => 'tools',
+                    'delete_upgrade' => 'upgrades'
+                ];
+                $table = $tableMap[$action] ?? '';
+
+                if ($table === '') {
+                    throw new Exception("Invalid delete action.");
+                }
 
                 // Fetch info for audit log before deleting
                 $stmt = $pdo->prepare("SELECT * FROM $table WHERE id = ?");

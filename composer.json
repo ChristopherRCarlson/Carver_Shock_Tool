@@ -6,7 +6,7 @@
     "scripts": {
         "check-style": "phpcs -n --standard=PSR12 --ignore=vendor/ .",
         "fix-style": "phpcbf --standard=PSR12 --ignore=vendor/ .",
-        "analyze": "psalm"
+        "analyze": "psalm --taint-analysis"
     },
     "require": {
         "phpoffice/phpspreadsheet": "^5.5"
