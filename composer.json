@@ -4,7 +4,7 @@
         "vimeo/psalm": "^6.15"
     },
     "scripts": {
-        "check-style": "phpcs --standard=PSR12 --ignore=vendor/ .",
+        "check-style": "phpcs -n --standard=PSR12 --ignore=vendor/ .",
         "fix-style": "phpcbf --standard=PSR12 --ignore=vendor/ .",
         "analyze": "psalm"
     },
