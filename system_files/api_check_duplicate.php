@@ -31,14 +31,20 @@ try {
         $params[':shock_pn'] = $shock_pn;
     }
 
-    // Explicitly select the exact columns we need
-    $query = "SELECT oe_pn, shock_pn, Brand, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi, shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap, metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose, res_clamp, bypass_screws, body_bearing, body_oring, body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing, shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve FROM shocks WHERE " . implode(" OR ", $conditions) . " LIMIT 1";
+    // Grab ALL columns from the matching shock
+    $query = "SELECT * FROM shocks WHERE " . implode(" OR ", $conditions) . " LIMIT 1";
     $stmt = $pdo->prepare($query);
 
     $stmt->execute($params);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($result) {
+        $shock_id = (int) $result['id'];
+        // FIX: Grab both the part number AND the specific note field, then fetch as an associative array
+        $result['decals'] = $pdo->query("SELECT d.part_number, m.placement_note as note FROM shock_decals_mapping m JOIN decals d ON m.decal_id = d.id WHERE m.shock_id = $shock_id")->fetchAll(PDO::FETCH_ASSOC);
+        $result['tools'] = $pdo->query("SELECT t.part_number, m.usage_note as note FROM shock_tools_mapping m JOIN tools t ON m.tool_id = t.id WHERE m.shock_id = $shock_id")->fetchAll(PDO::FETCH_ASSOC);
+        $result['upgrades'] = $pdo->query("SELECT u.part_number, m.note FROM shock_upgrades_mapping m JOIN upgrades u ON m.upgrade_id = u.id WHERE m.shock_id = $shock_id")->fetchAll(PDO::FETCH_ASSOC);
+
         // Return a clean, simple response tailored specifically for the JS loop
         echo json_encode([
             'isDuplicate' => true,

@@ -1,6 +1,3 @@
-# Ignore the Database (CRITICAL).
-system_files/Carver_Shocks_Database.csv
-
 # Ignore VS Code settings (optional but good practice).
 .vscode/
 
@@ -9,9 +6,6 @@ ReadMe.txt
 
 # Ignore any log files that may be generated.
 system_files/missing_skus.log
-
-# Ignore the audit logs, personal information should not be shared.
-system_files/audit_logs.csv
 
 # Ignore the vendor folder, it can be recreated using composer.
 vendor/

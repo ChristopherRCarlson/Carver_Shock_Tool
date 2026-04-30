@@ -4,7 +4,7 @@
 $dbFile = 'system_files/carver_database.sqlite';
 
 // 1. Standard Sanitizer (For non-linked text like Description/Headers)
-function display_clean($data): string
+function display_clean(?string $data): string
 {
     $val = trim($data ?? '');
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val)) {
@@ -14,7 +14,7 @@ function display_clean($data): string
 }
 
 // 2. Linked Sanitizer (For searchable parts)
-function display_linked_part($data): string
+function display_linked_part(?string $data): string
 {
     $val = trim($data ?? '');
     if (preg_match('/^(n\/a|na|n\.a\.|none|null|#n\/a|nan|#ref!|#value!|unknown|-)$/i', $val) || $val === '') {
@@ -37,7 +37,7 @@ if ($search) {
                     shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
                     metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose, res_clamp, bypass_screws, body_bearing, body_oring,
                     body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing,
-                    shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve, Brand
+                    shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve, Brand, id
                   FROM shocks
                   WHERE oe_pn LIKE :s
                      OR shock_pn LIKE :s
@@ -115,6 +115,20 @@ if ($search) {
             #kit-modal { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); justify-content: center; align-items: center; }
             #kit-modal img { max-width: 90%; max-height: 90%; background: white; padding: 10px; }
 
+            /* --- ACCESSORY DROPDOWN STYLES --- */
+            .accessory-section { grid-column: 1 / -1; margin-top: 15px; display: flex; flex-direction: column; gap: 8px; }
+            .accessory-dropdown { background: #fdfdfe; border: 1px solid #e9ecef; border-radius: 4px; padding: 5px 15px; }
+            .accessory-dropdown summary { font-weight: bold; color: #c62828; cursor: pointer; list-style: none; padding: 10px 0; outline: none; display: flex; align-items: center; }
+            .accessory-dropdown summary::-webkit-details-marker { display: none; }
+            .accessory-dropdown summary::before { content: '▶'; font-size: 0.8em; margin-right: 10px; transition: transform 0.2s; color: #555; }
+            .accessory-dropdown[open] summary::before { transform: rotate(90deg); color: #c62828; }
+            .dropdown-content { padding: 10px 0 15px 0; border-top: 1px solid #eee; }
+            .accessory-item { display: flex; gap: 15px; padding: 8px 0; border-bottom: 1px dashed #eee; font-size: 0.9em; align-items: center; }
+            .accessory-item:last-child { border-bottom: none; }
+            .acc-pn { font-weight: bold; min-width: 140px; }
+            .acc-desc { flex: 1; color: #333; }
+            .acc-note { color: #888; font-style: italic; font-size: 0.9em; }
+
             @media print {
                 @page { size: portrait; margin: 0.3in; }
                 .global-nav, .search-box, #kit-modal, .nav-link, form, [style*="position: absolute; right: 0; top: 0;"] { display: none !important; }
@@ -128,6 +142,8 @@ if ($search) {
                 .spec-value { font-size: 11pt !important; font-weight: bold !important; }
                 .mounting-box { grid-column: 1 / -1 !important; border: 1px solid black !important; margin-top: 10px !important; padding: 10px !important; }
                 .sleeve-pair { display: flex !important; flex-direction: row !important; gap: 10px !important; }
+                .accessory-dropdown[open] { border: 1px solid black !important; }
+                .accessory-dropdown summary::before { display: none !important; }
             }
         </style>
         <script>
@@ -281,6 +297,24 @@ if ($search) {
 
             <?php if (!empty($results)) : ?>
                 <?php foreach ($results as $row) : ?>
+                    <?php
+                        $shock_id = $row[39]; // Extract the DB id
+
+                        // Fetch Decals
+                        $stmtDecals = $pdo->prepare("SELECT d.part_number, d.description, m.placement_note FROM decals d JOIN shock_decals_mapping m ON d.id = m.decal_id WHERE m.shock_id = ?");
+                        $stmtDecals->execute([$shock_id]);
+                        $decals = $stmtDecals->fetchAll(PDO::FETCH_ASSOC);
+
+                        // Fetch Tools
+                        $stmtTools = $pdo->prepare("SELECT t.part_number, t.description, t.tool_type, m.usage_note FROM tools t JOIN shock_tools_mapping m ON t.id = m.tool_id WHERE m.shock_id = ?");
+                        $stmtTools->execute([$shock_id]);
+                        $tools = $stmtTools->fetchAll(PDO::FETCH_ASSOC);
+
+                        // Fetch Upgrades
+                        $stmtUpgrades = $pdo->prepare("SELECT u.part_number, u.description, m.note FROM upgrades u JOIN shock_upgrades_mapping m ON u.id = m.upgrade_id WHERE m.shock_id = ?");
+                        $stmtUpgrades->execute([$shock_id]);
+                        $upgrades = $stmtUpgrades->fetchAll(PDO::FETCH_ASSOC);
+                    ?>
                     <div class="result-card">
                         <div class="result-header">
                             <div style="position: relative;">
@@ -386,19 +420,71 @@ if ($search) {
                                 </div>
                             </div>
                         </div>
+                        <?php if (count($decals) > 0 || count($tools) > 0 || count($upgrades) > 0) : ?>
+                            <div class="accessory-section">
+
+                                <?php if (count($decals) > 0) : ?>
+                                <details class="accessory-dropdown">
+                                    <summary>Decals (<?= count($decals) ?>)</summary>
+                                    <div class="dropdown-content">
+                                        <?php foreach ($decals as $decal) : ?>
+                                            <div class="accessory-item">
+                                                <div class="acc-pn"><?= display_linked_part($decal['part_number']) ?></div>
+                                                <div class="acc-desc"><?= display_clean($decal['description']) ?></div>
+                                                <div class="acc-note"><?= display_clean($decal['placement_note']) ?></div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </details>
+                                <?php endif; ?>
+
+                                <?php if (count($tools) > 0) : ?>
+                                <details class="accessory-dropdown">
+                                    <summary>Tools (<?= count($tools) ?>)</summary>
+                                    <div class="dropdown-content">
+                                        <?php foreach ($tools as $tool) : ?>
+                                            <div class="accessory-item">
+                                                <div class="acc-pn"><?= display_linked_part($tool['part_number']) ?></div>
+                                                <div class="acc-desc"><?= display_clean($tool['description']) ?>
+                                                    <span style="font-size:0.8em; color:#999;">[<?= display_clean($tool['tool_type']) ?>]</span>
+                                                </div>
+                                                <div class="acc-note"><?= display_clean($tool['usage_note']) ?></div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </details>
+                                <?php endif; ?>
+
+                                <?php if (count($upgrades) > 0) : ?>
+                                <details class="accessory-dropdown">
+                                    <summary>Upgrades (<?= count($upgrades) ?>)</summary>
+                                    <div class="dropdown-content">
+                                        <?php foreach ($upgrades as $upgrade) : ?>
+                                            <div class="accessory-item">
+                                                <div class="acc-pn"><?= display_linked_part($upgrade['part_number']) ?></div>
+                                                <div class="acc-desc"><?= display_clean($upgrade['description']) ?></div>
+                                                <div class="acc-note"><?= display_clean($upgrade['note']) ?></div>
+                                            </div>
+                                        <?php endforeach; ?>
+                                    </div>
+                                </details>
+                                <?php endif; ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>
 
             <div id="kit-modal" onclick="this.style.display='none'"><img id="modal-img" src="" alt="Expanded View"></div>
 
-            <div id="debug-logger" style="display: none; padding: 20px; background: #222; color: #0f0; font-family: monospace; margin-top: 20px; border-radius: 5px;">
+            <!-- <div id="debug-logger" style="display: none; padding: 20px; background: #222; color: #0f0; font-family: monospace; margin-top: 20px; border-radius: 5px;">
                 <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #444; padding-bottom: 10px; margin-bottom: 10px;">
                     <span style="font-weight: bold;">Carver Tool Diagnostic Log</span>
                     <button onclick="document.getElementById('debug-log-text').select(); document.execCommand('copy'); alert('Log Copied!');" style="background: #444; color: white; border: 1px solid #666; padding: 5px 10px; font-size: 12px;">COPY LOG</button>
                 </div>
                 <textarea id="debug-log-text" style="width: 100%; height: 200px; background: #111; color: #0f0; border: none; font-size: 12px; resize: vertical;" readonly></textarea>
-            </div>
+            </div> !-->
+
         </div>
     </body>
 </html>
