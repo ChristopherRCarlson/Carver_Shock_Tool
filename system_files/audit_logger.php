@@ -22,13 +22,9 @@ function logAudit(string $tableName, int|string $recordId, string $action, ?arra
 
         $changedBy = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
 
-        // Extract ONLY the values, throwing away all the column names/keys
-        $oldDataValues = $oldData ? array_values($oldData) : null;
-        $newDataValues = $newData ? array_values($newData) : null;
-
-        // Convert the value-only arrays to JSON strings
-        $oldDataStr = $oldDataValues ? json_encode($oldDataValues) : null;
-        $newDataStr = $newDataValues ? json_encode($newDataValues) : null;
+        // Convert the arrays directly to JSON strings to preserve the column names
+        $oldDataStr = $oldData ? json_encode($oldData) : null;
+        $newDataStr = $newData ? json_encode($newData) : null;
 
         $stmt = $pdo->prepare("INSERT INTO audit_logs (
             log_id, table_name, record_id, action, old_data, new_data, changed_by, timestamp

@@ -6,22 +6,41 @@ $dbFile = __DIR__ . '/system_files/carver_database.sqlite';
 $logs = [];
 $searched = false;
 
-// The 38 column headers so we can make the changes human-readable
-$columns = [
-    "OE P/N", "Shock P/N", "Product Use", "Location", "Rebuild Kit", "Service Kit", "IFP Depth",
-    "Nitrogen PSI", "Shaft", "Seal Head", "B/O Bumper", "Body", "Inner Body", "Body Cap",
-    "Bearing Cap", "Reservoir", "Res End Cap", "Metering Rod", "Rebound Adjuster",
-    "Compression Adjuster", "Compression Adjuster Knob", "Compression Adjuster Screw",
-    "Hose", "Res Clamp", "Bypass Screws", "Body Bearing", "Body O-Ring", "Body Reducer", "Body Spacer",
-    "Body Inner Sleeve", "Body Outer Sleeve", "Shaft Eyelet", "Shaft Bearing", "Shaft O-Ring",
-    "Shaft Reducer", "Shaft Spacer", "Shaft Inner Sleeve", "Shaft Outer Sleeve", "Brand"
+// The associative mapping for beautiful column names
+$columnMap = [
+    'oe_pn' => 'OE P/N', 'shock_pn' => 'Shock P/N', 'product_use' => 'Product Use',
+    'location' => 'Location', 'rebuild_kit' => 'Rebuild Kit', 'service_kit' => 'Service Kit',
+    'ifp_depth' => 'IFP Depth', 'nitrogen_psi' => 'Nitrogen PSI', 'shaft' => 'Shaft',
+    'seal_head' => 'Seal Head', 'bo_bumper' => 'B/O Bumper', 'body' => 'Body',
+    'inner_body' => 'Inner Body', 'body_cap' => 'Body Cap', 'bearing_cap' => 'Bearing Cap',
+    'reservoir' => 'Reservoir', 'res_end_cap' => 'Res End Cap', 'metering_rod' => 'Metering Rod',
+    'rebound_adjuster' => 'Rebound Adjuster', 'comp_adjuster' => 'Compression Adjuster',
+    'comp_adjuster_knob' => 'Compression Adjuster Knob', 'comp_adjuster_screw' => 'Compression Adjuster Screw',
+    'hose' => 'Hose', 'res_clamp' => 'Res Clamp', 'bypass_screws' => 'Bypass Screws',
+    'body_bearing' => 'Body Bearing', 'body_oring' => 'Body O-Ring', 'body_reducer' => 'Body Reducer',
+    'body_spacer' => 'Body Spacer', 'body_inner_sleeve' => 'Body Inner Sleeve',
+    'body_outer_sleeve' => 'Body Outer Sleeve', 'shaft_eyelet' => 'Shaft Eyelet',
+    'shaft_bearing' => 'Shaft Bearing', 'shaft_oring' => 'Shaft O-Ring',
+    'shaft_reducer' => 'Shaft Reducer', 'shaft_spacer' => 'Shaft Spacer',
+    'shaft_inner_sleeve' => 'Shaft Inner Sleeve', 'shaft_outer_sleeve' => 'Shaft Outer Sleeve',
+    'Brand' => 'Brand', 'shock_id' => 'Target Shock OE P/N', 'decal_id' => 'Decal P/N', 'tool_id' => 'Tool P/N',
+    'upgrade_id' => 'Upgrade P/N', 'placement_note' => 'Placement Note',
+    'usage_note' => 'Usage Note', 'note' => 'Note'
 ];
+
+// Fallback for older index-based logs
+$columnsIndexed = array_values($columnMap);
 
 if (!empty($oe_pn)) {
     $searched = true;
     try {
         $pdo = new PDO('sqlite:' . $dbFile);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        // Fetch dictionaries to translate Database IDs into Part Numbers
+        $decalMap = $pdo->query("SELECT id, part_number FROM decals")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $toolMap = $pdo->query("SELECT id, part_number FROM tools")->fetchAll(PDO::FETCH_KEY_PAIR);
+        $upgradeMap = $pdo->query("SELECT id, part_number FROM upgrades")->fetchAll(PDO::FETCH_KEY_PAIR);
 
         // Fetch logs for this specific OE Part Number, newest first
         $stmt = $pdo->prepare("SELECT * FROM audit_logs WHERE record_id = :oe_pn ORDER BY id DESC");
@@ -146,12 +165,10 @@ if (!empty($oe_pn)) {
     </style>
 </head>
 <body>
-
     <div class="global-nav" style="background: #333; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
         <span style="font-weight: bold; letter-spacing: 1px; font-size: 1.1em;">CARVER DIGITAL INFRASTRUCTURE</span>
         <a href="index.php" style="color: #ff8a80; text-decoration: none; font-weight: bold; font-size: 0.9em; border: 1px solid #ff8a80; padding: 5px 10px; border-radius: 4px;">&larr; BACK TO DASHBOARD</a>
     </div>
-
     <div class="container">
         <div class="search-box">
             <form method="GET" action="history.php" style="display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap;">
@@ -159,7 +176,6 @@ if (!empty($oe_pn)) {
                 <button type="submit">SEARCH AUDIT LOGS</button>
             </form>
         </div>
-
         <?php if (isset($error)) : ?>
             <div class="empty-state" style="color: #c62828;"><?php echo htmlspecialchars($error); ?></div>
         <?php elseif (!$searched) : ?>
@@ -168,14 +184,37 @@ if (!empty($oe_pn)) {
             <div class="empty-state">No version history found for OE: <strong><?php echo htmlspecialchars($oe_pn); ?></strong></div>
         <?php else : ?>
             <h3 style="margin-bottom: 20px; color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px;">Audit History for OE: <?php echo htmlspecialchars($oe_pn); ?></h3>
-
             <?php foreach ($logs as $log) : ?>
                 <div class="log-entry">
                     <div class="log-header">
-                        <span class="<?php echo htmlspecialchars($log['action']); ?>"><?php echo htmlspecialchars($log['action']); ?></span>
+                        <span class="<?php echo htmlspecialchars($log['action']); ?>">
+                            <?php echo htmlspecialchars($log['action']); ?>
+                            <?php
+                            // FIX 1: Clean up the table names (e.g., 'shock_decals_mapping' becomes ' - Decals')
+                            if ($log['table_name'] !== 'shocks') {
+                                echo " - " . ucwords(str_replace('_', ' ', str_replace(['shock_', '_mapping'], '', $log['table_name'])));
+                            }
+                            ?>
+                        </span>
                         <span><?php echo htmlspecialchars(date('m/d/Y g:i A', strtotime($log['timestamp']))); ?> (IP: <?php echo htmlspecialchars($log['changed_by']); ?>)</span>
                     </div>
                     <div class="log-body">
+                        <?php
+                        $oldData = (array)($log['old_data'] ?? []);
+                        $newData = (array)($log['new_data'] ?? []);
+
+                        // Bulletproof check: Does the array actually have string keys?
+                        $isAssociative = false;
+                        if (!empty($newData)) {
+                            $isAssociative = count(array_filter(array_keys($newData), 'is_string')) > 0;
+                        } elseif (!empty($oldData)) {
+                            $isAssociative = count(array_filter(array_keys($oldData), 'is_string')) > 0;
+                        }
+
+                        // Define the unified loop target based on the format
+                        $loopKeys = $isAssociative ? array_keys(array_merge($oldData, $newData)) : array_keys($columnsIndexed);
+                        ?>
+
                             <?php if ($log['action'] === 'CREATE') : ?>
                                 <p style="margin: 0 0 15px 0; color: #2e7d32; font-weight: bold;">Initial record created with the following data:</p>
                                 <table>
@@ -184,12 +223,27 @@ if (!empty($oe_pn)) {
                                         <th>Value Entered</th>
                                     </tr>
                                     <?php
-                                    foreach ($columns as $i => $colName) {
-                                        $val = $log['new_data'][$i] ?? '';
-                                        if ($val !== '') { // Only show fields that actually have data
+                                    foreach ($loopKeys as $key) {
+                                        $cleanKey = ltrim((string)$key, ':'); // FIX 2: Strip the PDO colons!
+                                        $colName = $isAssociative ? ($columnMap[$cleanKey] ?? ucwords(str_replace('_', ' ', $cleanKey))) : ($columnsIndexed[$key] ?? $key);
+                                        $val = $newData[$key] ?? '';
+                                        // Translate IDs to readable values
+                                        if ($cleanKey === 'shock_id' && $val !== '') {
+                                            $val = $oe_pn;
+                                        }
+                                        if ($cleanKey === 'decal_id') {
+                                            $val = $decalMap[$val] ?? $val;
+                                        }
+                                        if ($cleanKey === 'tool_id') {
+                                            $val = $toolMap[$val] ?? $val;
+                                        }
+                                        if ($cleanKey === 'upgrade_id') {
+                                            $val = $upgradeMap[$val] ?? $val;
+                                        }
+                                        if ($val !== '') {
                                             echo "<tr>";
                                             echo "<td><strong>{$colName}</strong></td>";
-                                            echo "<td class='new-val'>" . htmlspecialchars($val) . "</td>";
+                                            echo "<td class='new-val'>" . htmlspecialchars((string)$val) . "</td>";
                                             echo "</tr>";
                                         }
                                     }
@@ -204,12 +258,27 @@ if (!empty($oe_pn)) {
                                         <th>Deleted Value</th>
                                     </tr>
                                     <?php
-                                    foreach ($columns as $i => $colName) {
-                                        $val = $log['old_data'][$i] ?? '';
+                                    foreach ($loopKeys as $key) {
+                                        $cleanKey = ltrim((string)$key, ':'); // FIX 2: Strip the PDO colons!
+                                        $colName = $isAssociative ? ($columnMap[$cleanKey] ?? ucwords(str_replace('_', ' ', $cleanKey))) : ($columnsIndexed[$key] ?? $key);
+                                        $val = $oldData[$key] ?? '';
+                                        // Translate IDs to readable values
+                                        if ($cleanKey === 'shock_id' && $val !== '') {
+                                            $val = $oe_pn;
+                                        }
+                                        if ($cleanKey === 'decal_id') {
+                                            $val = $decalMap[$val] ?? $val;
+                                        }
+                                        if ($cleanKey === 'tool_id') {
+                                            $val = $toolMap[$val] ?? $val;
+                                        }
+                                        if ($cleanKey === 'upgrade_id') {
+                                            $val = $upgradeMap[$val] ?? $val;
+                                        }
                                         if ($val !== '') {
                                             echo "<tr>";
                                             echo "<td><strong>{$colName}</strong></td>";
-                                            echo "<td class='old-val'>" . htmlspecialchars($val) . "</td>";
+                                            echo "<td class='old-val'>" . htmlspecialchars((string)$val) . "</td>";
                                             echo "</tr>";
                                         }
                                     }
@@ -225,18 +294,41 @@ if (!empty($oe_pn)) {
                                         <th>New Value</th>
                                     </tr>
                                     <?php
-                                    // Compare old and new arrays
                                     $changesFound = false;
-                                    foreach ($columns as $i => $colName) {
-                                        $oldVal = $log['old_data'][$i] ?? '';
-                                        $newVal = $log['new_data'][$i] ?? '';
+                                    foreach ($loopKeys as $key) {
+                                        $cleanKey = ltrim((string)$key, ':'); // FIX 2: Strip the PDO colons!
+                                        $colName = $isAssociative ? ($columnMap[$cleanKey] ?? ucwords(str_replace('_', ' ', $cleanKey))) : ($columnsIndexed[$key] ?? $key);
+                                        $oldVal = $oldData[$key] ?? '';
+                                        $newVal = $newData[$key] ?? '';
+
+                                        // Translate IDs to readable values
+                                        if ($cleanKey === 'shock_id') {
+                                            if ($oldVal !== '') {
+                                                $oldVal = $oe_pn;
+                                            }
+                                            if ($newVal !== '') {
+                                                $newVal = $oe_pn;
+                                            }
+                                        }
+                                        if ($cleanKey === 'decal_id') {
+                                            $oldVal = $decalMap[$oldVal] ?? $oldVal;
+                                            $newVal = $decalMap[$newVal] ?? $newVal;
+                                        }
+                                        if ($cleanKey === 'tool_id') {
+                                            $oldVal = $toolMap[$oldVal] ?? $oldVal;
+                                            $newVal = $toolMap[$newVal] ?? $newVal;
+                                        }
+                                        if ($cleanKey === 'upgrade_id') {
+                                            $oldVal = $upgradeMap[$oldVal] ?? $oldVal;
+                                            $newVal = $upgradeMap[$newVal] ?? $newVal;
+                                        }
 
                                         if ($oldVal !== $newVal) {
                                             $changesFound = true;
                                             echo "<tr>";
                                             echo "<td><strong>{$colName}</strong></td>";
-                                            echo "<td class='old-val'>" . htmlspecialchars($oldVal) . "</td>";
-                                            echo "<td class='new-val'>" . htmlspecialchars($newVal) . "</td>";
+                                            echo "<td class='old-val'>" . htmlspecialchars((string)$oldVal) . "</td>";
+                                            echo "<td class='new-val'>" . htmlspecialchars((string)$newVal) . "</td>";
                                             echo "</tr>";
                                         }
                                     }

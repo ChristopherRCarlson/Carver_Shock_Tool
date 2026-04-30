@@ -501,7 +501,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         fetch('api_check_duplicate.php?oe_pn=' + encodeURIComponent(oeValue))
                             .then(response => response.json())
                             .then(result => {
-                                // THE FIX: Look for 'isDuplicate' from the new SQLite API
+                                // Look for 'isDuplicate' from the new SQLite API
                                 if (result.isDuplicate) {
                                     if (confirm('OE ' + oeValue + ' already exists in the database! Would you like to load its data to update it?')) {
 
@@ -509,16 +509,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                         const shockData = result.assoc_data || result;
 
                                         for (const [key, value] of Object.entries(shockData)) {
-                                            const inputField = document.querySelector(`[name="${key}"]`) || document.querySelector(`[name="${key.toLowerCase()}"]`);
-                                            if (inputField && key !== 'oe_pn') {
-                                                inputField.value = value || '';
+
+                                            // FIX 3: Handle the Dynamic Accessory Arrays
+                                            if (Array.isArray(value) && (key === 'decals' || key === 'tools' || key === 'upgrades')) {
+                                                const container = document.getElementById(key + '-container');
+                                                if (container) {
+                                                    container.innerHTML = ''; // Clear the initial blank rows
+                                                    const prefix = key.slice(0, -1); // e.g., 'decals' becomes 'decal'
+
+                                                    // Build a row for every accessory assigned to the shock
+                                                    value.forEach(acc => {
+                                                        const row = document.createElement('div');
+                                                        row.className = 'accessory-row';
+
+                                                        // Pull the values out of the object (with fallbacks if empty)
+                                                        const acc_pn = acc.part_number || '';
+                                                        const acc_note = acc.note || '';
+
+                                                        // FIX: Inject BOTH the value (part number) and the note
+                                                        row.innerHTML = `<input type="text" name="${prefix}_ids[]" value="${acc_pn}"><input type="text" name="${prefix}_notes[]" placeholder="Note" value="${acc_note}">`;
+                                                        container.appendChild(row);
+                                                    });
+
+                                                    // Add one blank row at the bottom in case they want to add more
+                                                    addAccessoryRow(key, prefix, prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' Part Number', 'Note');
+                                                }
+                                            }
+                                            // Handle Standard Text Inputs
+                                            else {
+                                                const inputField = document.querySelector(`[name="${key}"]`) || document.querySelector(`[name="${key.toLowerCase()}"]`);
+                                                if (inputField && key !== 'oe_pn') {
+                                                    inputField.value = value || '';
+                                                }
                                             }
                                         }
-                                        // Note: Mapping data would ideally be loaded via API here in a future update.
                                     }
                                 }
                             })
-                            .catch(error => console.error('Error fetching OE data:', error));
+                        .catch(error => console.error('Error fetching OE data:', error));
                     });
                 }
 
