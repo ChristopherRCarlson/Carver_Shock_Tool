@@ -1,4 +1,10 @@
 <?php
+// Force browser to ALWAYS fetch the newest version of this page
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
+header("Expires: 0");
+
 // internal_entry.php - V6.6 (Decals, Tools, and Upgrades Integration)
 
 $dbFile = __DIR__ . '/carver_database.sqlite';
@@ -477,8 +483,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
 
         <script>
-            // Milestone 5 Dynamic Inputs Logic
-            function addAccessoryRow(containerId, prefix, idPlaceholder, notePlaceholder) {
+            // Milestone 5 Dynamic Inputs Logic (Upgraded with On-The-Fly Creation)
+            function addAccessoryRow(containerId, prefix, idPlaceholder, notePlaceholder, presetId = '', presetNote = '') {
                 const container = document.getElementById(containerId + '-container');
                 const row = document.createElement('div');
                 row.className = 'accessory-row';
@@ -487,11 +493,84 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 idInput.type = 'text';
                 idInput.name = prefix + '_ids[]';
                 idInput.placeholder = idPlaceholder;
+                idInput.value = presetId;
+
+                // THE MAGIC: Listen for when the technician leaves the text box
+                idInput.addEventListener('blur', function() {
+                    const pn = this.value.trim();
+                    // Don't run the API check if the box is blank or hasn't changed
+                    if (pn === '' || pn === presetId) return;
+
+                    // Visually indicate to the user that we are checking the database
+                    this.style.backgroundColor = '#f0f8ff';
+
+                    fetch(`api_accessory.php?type=${prefix}&pn=${encodeURIComponent(pn)}`)
+                        .then(response => {
+                            if (!response.ok) throw new Error("Network response was not ok. Check API path.");
+                            // Grab the raw text FIRST so we can catch PHP errors
+                            return response.text();
+                        })
+                        .then(text => {
+                            try {
+                                const data = JSON.parse(text);
+                                idInput.style.backgroundColor = ''; // Reset color
+
+                                if (data.exists === false) {
+                                    const capitalized = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+
+                                    if (confirm(`WARNING: The ${capitalized} '${pn}' does not exist in the master catalog. Would you like to create it now?`)) {
+                                        const desc = prompt(`Enter a description for ${capitalized} '${pn}':`);
+                                        if (desc !== null) {
+                                            let payload = { type: prefix, pn: pn, desc: desc };
+                                            if (prefix === 'tool') {
+                                                payload.tool_type = prompt(`Enter Tool Type for '${pn}' (e.g., Wrench, Socket):`, 'Standard') || 'Standard';
+                                            }
+
+                                            fetch('api_accessory.php', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify(payload)
+                                            })
+                                            .then(res => res.json())
+                                            .then(resData => {
+                                                if (resData.success) {
+                                                    presetId = pn; // Update preset so warning doesn't fire again
+                                                    idInput.style.backgroundColor = '#e8f5e9'; // Flash green
+                                                    setTimeout(() => idInput.style.backgroundColor = '', 1500);
+                                                } else {
+                                                    alert('Error creating accessory: ' + (resData.error || 'Unknown error'));
+                                                    idInput.value = '';
+                                                }
+                                            });
+                                        } else {
+                                            idInput.value = ''; // Cancelled description
+                                        }
+                                    } else {
+                                        idInput.value = ''; // Cancelled creation
+                                    }
+                                } else if (data.error) {
+                                    alert("API Error: " + data.error);
+                                    idInput.style.backgroundColor = '#ffebee';
+                                }
+                            } catch (e) {
+                                // THIS CATCHES THE SILENT PHP ERRORS
+                                console.error("Raw API Response:", text);
+                                alert("API crashed! It returned HTML/Errors instead of JSON. Press F12 and check the Console to see the raw output from PHP.");
+                                idInput.style.backgroundColor = '#ffebee';
+                            }
+                        })
+                        .catch(error => {
+                            console.error("Fetch failed:", error);
+                            alert("Could not connect to api_accessory.php. Check your internet or file paths!");
+                            idInput.style.backgroundColor = '#ffebee';
+                        });
+                });
 
                 const noteInput = document.createElement('input');
                 noteInput.type = 'text';
                 noteInput.name = prefix + '_notes[]';
                 noteInput.placeholder = notePlaceholder;
+                noteInput.value = presetNote;
 
                 row.appendChild(idInput);
                 row.appendChild(noteInput);
@@ -532,18 +611,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                                     container.innerHTML = ''; // Clear the initial blank rows
                                                     const prefix = key.slice(0, -1); // e.g., 'decals' becomes 'decal'
 
-                                                    // Build a row for every accessory assigned to the shock
+                                                    // Build a row for every accessory assigned to the shock using the smart function
                                                     value.forEach(acc => {
-                                                        const row = document.createElement('div');
-                                                        row.className = 'accessory-row';
-
-                                                        // Pull the values out of the object (with fallbacks if empty)
                                                         const acc_pn = acc.part_number || '';
                                                         const acc_note = acc.note || '';
 
-                                                        // FIX: Inject BOTH the value (part number) and the note
-                                                        row.innerHTML = `<input type="text" name="${prefix}_ids[]" value="${acc_pn}"><input type="text" name="${prefix}_notes[]" placeholder="Note" value="${acc_note}">`;
-                                                        container.appendChild(row);
+                                                        // Pass the pre-filled values directly into the function
+                                                        addAccessoryRow(key, prefix, 'Part Number', 'Note', acc_pn, acc_note);
                                                     });
 
                                                     // Add one blank row at the bottom in case they want to add more

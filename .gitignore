@@ -4,9 +4,6 @@
 # Ignore Readme, only those within the company should know how to run the system.
 ReadMe.txt
 
-# Ignore any log files that may be generated.
-system_files/missing_skus.log
-
 # Ignore the vendor folder, it can be recreated using composer.
 vendor/
 

@@ -99,8 +99,6 @@ if ($search) {
             .sleeve-pair > div { background: #fff; padding: 5px; border: 1px solid #eee; border-radius: 3px; }
 
             @media (max-width: 850px) {
-                .results-grid { display: grid; grid-template-columns: 1fr; gap: 15px; }
-                .flex-container, .mounting-section { display: flex; flex-direction: column; gap: 10px; }
                 .sleeve-pair { flex-direction: column; }
                 .result-card { margin: 5px; width: auto; }
                 input[type="text"] { width: 100%; margin-bottom: 10px; }
@@ -134,7 +132,7 @@ if ($search) {
                 .global-nav, .search-box, #kit-modal, .nav-link, form, [style*="position: absolute; right: 0; top: 0;"] { display: none !important; }
                 body { background: white !important; font-family: "Helvetica", "Arial", sans-serif; font-size: 11pt; color: black; margin: 0; padding: 0; }
                 .container { box-shadow: none !important; margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
-                .result-card { border: 2px solid black !important; padding: 15px !important; margin: 0 !important; page-break-inside: avoid; border-radius: 0; }
+                .result-card { border: 2px solid black !important; padding: 15px !important; margin: 0 !important; border-radius: 0; }
                 .oe-title { font-size: 22pt !important; border-bottom: 2px solid black; margin-bottom: 5px; }
                 .spec-grid { display: grid !important; grid-template-columns: 1fr 1fr 1fr !important; gap: 8px !important; }
                 .spec-item { background: transparent !important; border: 1px solid #ddd !important; padding: 5px !important; }
@@ -144,6 +142,10 @@ if ($search) {
                 .sleeve-pair { display: flex !important; flex-direction: row !important; gap: 10px !important; }
                 .accessory-dropdown[open] { border: 1px solid black !important; }
                 .accessory-dropdown summary::before { display: none !important; }
+                .accessory-dropdown, .mounting-box, .spec-grid {
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                }
             }
         </style>
         <script>
@@ -200,11 +202,12 @@ if ($search) {
                         }
                     }
                 }
-                else if (element.tagName === 'A' && element.parentNode) {
-                    const span = document.createElement('span');
-                    span.className = 'empty dead-link';
-                    span.textContent = element.textContent;
-                    element.parentNode.replaceChild(span, element);
+                else if (element.tagName === 'A') {
+                    // Add the class so your CSS (.part-link.dead-link) takes over and turns it black
+                    element.classList.add('dead-link');
+                    // Strip the URL so it becomes completely dead text
+                    element.removeAttribute('href');
+                    element.removeAttribute('target');
                 }
             }
 
@@ -424,7 +427,7 @@ if ($search) {
                             <div class="accessory-section">
 
                                 <?php if (count($decals) > 0) : ?>
-                                <details class="accessory-dropdown">
+                                <details open class="accessory-dropdown">
                                     <summary>Decals (<?= count($decals) ?>)</summary>
                                     <div class="dropdown-content">
                                         <?php foreach ($decals as $decal) : ?>
@@ -439,7 +442,7 @@ if ($search) {
                                 <?php endif; ?>
 
                                 <?php if (count($tools) > 0) : ?>
-                                <details class="accessory-dropdown">
+                                <details open class="accessory-dropdown">
                                     <summary>Tools (<?= count($tools) ?>)</summary>
                                     <div class="dropdown-content">
                                         <?php foreach ($tools as $tool) : ?>
@@ -456,7 +459,7 @@ if ($search) {
                                 <?php endif; ?>
 
                                 <?php if (count($upgrades) > 0) : ?>
-                                <details class="accessory-dropdown">
+                                <details open class="accessory-dropdown">
                                     <summary>Upgrades (<?= count($upgrades) ?>)</summary>
                                     <div class="dropdown-content">
                                         <?php foreach ($upgrades as $upgrade) : ?>
