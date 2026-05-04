@@ -168,74 +168,89 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $shock_id = $stmtId->fetchColumn();
 
             if ($shock_id) {
-                // 1. Process Decals
-                if (!empty($_POST['decal_ids'])) {
-                    foreach ($_POST['decal_ids'] as $index => $part_number) {
-                        $part_number = trim($part_number);
-                        if (empty($part_number)) {
-                            continue;
-                        }
-                        $note = trim($_POST['decal_notes'][$index] ?? '');
+                // --- SMART ACCESSORY SYNC FUNCTION (Self-Healing) ---
+                if (!function_exists('syncAccessories')) {
+                    function syncAccessories(PDO $pdo, int|string $shock_id, string $oeNum, string $tableName, string $masterTable, string $masterIdCol, string $mappingNoteCol, array $postIds, array $postNotes): array
+                    {
+                        $errors = [];
 
-                        $stmt = $pdo->prepare("SELECT id FROM decals WHERE part_number = :pn");
-                        $stmt->execute([':pn' => $part_number]);
-                        $decal_id = $stmt->fetchColumn();
+                        // 1. Fetch ALL existing mappings (Not keyed by master ID, so we catch the duplicates!)
+                        $stmt = $pdo->prepare("SELECT id, $masterIdCol, $mappingNoteCol FROM $tableName WHERE shock_id = ?");
+                        $stmt->execute([$shock_id]);
+                        $existingMappings = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                        if ($decal_id) {
-                            $ins = $pdo->prepare("INSERT INTO shock_decals_mapping (shock_id, decal_id, placement_note) VALUES (?, ?, ?)");
-                            $ins->execute([$shock_id, $decal_id, $note]);
-                            logAudit('shock_decals_mapping', $oeNum, 'CREATE', null, ['shock_id' => $shock_id, 'decal_id' => $decal_id, 'placement_note' => $note], $pdo);
-                        } else {
-                            $accErrors[] = "Decal PN: '$part_number'";
+                        // 2. Parse what was just submitted in the form
+                        $submitted = [];
+                        foreach ($postIds as $index => $pn) {
+                            $pn = trim((string)$pn);
+                            if (empty($pn)) {
+                                continue;
+                            }
+
+                            $stmt = $pdo->prepare("SELECT id FROM $masterTable WHERE part_number = ?");
+                            $stmt->execute([$pn]);
+                            $mId = $stmt->fetchColumn();
+
+                            if ($mId) {
+                                $submitted[$mId] = trim((string)($postNotes[$index] ?? ''));
+                            } else {
+                                $errors[] = "$masterTable PN: '$pn'";
+                            }
                         }
+
+                        $processedMasterIds = [];
+
+                        // 3. Clean up existing mappings (Handle deletions and kill ghost duplicates)
+                        foreach ($existingMappings as $data) {
+                            $mappingId = $data['id'];
+                            $mId = $data[$masterIdCol];
+                            $dbNote = $data[$mappingNoteCol] ?? '';
+
+                            if (!array_key_exists($mId, $submitted)) {
+                                // The part was completely removed from the form
+                                $pdo->prepare("DELETE FROM $tableName WHERE id = ?")->execute([$mappingId]);
+                                logAudit($tableName, $oeNum, 'DELETE', ['shock_id' => $shock_id, $masterIdCol => $mId, $mappingNoteCol => $dbNote], null, $pdo);
+                            } else {
+                                // The part IS in the form
+                                if (in_array($mId, $processedMasterIds)) {
+                                    // SELF-HEALING: We already kept one copy of this accessory. This is a duplicate database ghost! Kill it.
+                                    $pdo->prepare("DELETE FROM $tableName WHERE id = ?")->execute([$mappingId]);
+                                    logAudit($tableName, $oeNum, 'DELETE', ['shock_id' => $shock_id, $masterIdCol => $mId, $mappingNoteCol => $dbNote], null, $pdo);
+                                } else {
+                                    // This is the primary mapping. Keep it, and check for note updates.
+                                    $processedMasterIds[] = $mId;
+                                    $formNote = $submitted[$mId];
+
+                                    if ($dbNote !== $formNote) {
+                                        $pdo->prepare("UPDATE $tableName SET $mappingNoteCol = ? WHERE id = ?")->execute([$formNote, $mappingId]);
+                                        logAudit($tableName, $oeNum, 'UPDATE', ['shock_id' => $shock_id, $masterIdCol => $mId, $mappingNoteCol => $dbNote], ['shock_id' => $shock_id, $masterIdCol => $mId, $mappingNoteCol => $formNote], $pdo);
+                                    }
+                                }
+                            }
+                        }
+
+                        // 4. Insert Brand New Additions
+                        foreach ($submitted as $mId => $formNote) {
+                            if (!in_array($mId, $processedMasterIds)) {
+                                $pdo->prepare("INSERT INTO $tableName (shock_id, $masterIdCol, $mappingNoteCol) VALUES (?, ?, ?)")->execute([$shock_id, $mId, $formNote]);
+                                logAudit($tableName, $oeNum, 'CREATE', null, ['shock_id' => $shock_id, $masterIdCol => $mId, $mappingNoteCol => $formNote], $pdo);
+                            }
+                        }
+
+                        return $errors;
                     }
                 }
 
-                // 2. Process Tools
-                if (!empty($_POST['tool_ids'])) {
-                    foreach ($_POST['tool_ids'] as $index => $part_number) {
-                        $part_number = trim($part_number);
-                        if (empty($part_number)) {
-                            continue;
-                        }
-                        $note = trim($_POST['tool_notes'][$index] ?? '');
+                // --- EXECUTE THE SYNC FOR ALL THREE CATALOGS ---
+                $decalErrs = syncAccessories($pdo, $shock_id, $oeNum, 'shock_decals_mapping', 'decals', 'decal_id', 'placement_note', $_POST['decal_ids'] ?? [], $_POST['decal_notes'] ?? []);
+                $toolErrs = syncAccessories($pdo, $shock_id, $oeNum, 'shock_tools_mapping', 'tools', 'tool_id', 'usage_note', $_POST['tool_ids'] ?? [], $_POST['tool_notes'] ?? []);
+                $upgradeErrs = syncAccessories($pdo, $shock_id, $oeNum, 'shock_upgrades_mapping', 'upgrades', 'upgrade_id', 'note', $_POST['upgrade_ids'] ?? [], $_POST['upgrade_notes'] ?? []);
 
-                        $stmt = $pdo->prepare("SELECT id FROM tools WHERE part_number = :pn");
-                        $stmt->execute([':pn' => $part_number]);
-                        $tool_id = $stmt->fetchColumn();
-
-                        if ($tool_id) {
-                            $ins = $pdo->prepare("INSERT INTO shock_tools_mapping (shock_id, tool_id, usage_note) VALUES (?, ?, ?)");
-                            $ins->execute([$shock_id, $tool_id, $note]);
-                            logAudit('shock_tools_mapping', $oeNum, 'CREATE', null, ['shock_id' => $shock_id, 'tool_id' => $tool_id, 'usage_note' => $note], $pdo);
-                        } else {
-                            $accErrors[] = "Tool PN: '$part_number'";
-                        }
-                    }
+                // Merge any missing PN errors to display at the top of the screen
+                if (!isset($accErrors)) {
+                    $accErrors = [];
                 }
-
-                // 3. Process Upgrades
-                if (!empty($_POST['upgrade_ids'])) {
-                    foreach ($_POST['upgrade_ids'] as $index => $part_number) {
-                        $part_number = trim($part_number);
-                        if (empty($part_number)) {
-                            continue;
-                        }
-                        $note = trim($_POST['upgrade_notes'][$index] ?? '');
-
-                        $stmt = $pdo->prepare("SELECT id FROM upgrades WHERE part_number = :pn");
-                        $stmt->execute([':pn' => $part_number]);
-                        $upgrade_id = $stmt->fetchColumn();
-
-                        if ($upgrade_id) {
-                            $ins = $pdo->prepare("INSERT INTO shock_upgrades_mapping (shock_id, upgrade_id, note) VALUES (?, ?, ?)");
-                            $ins->execute([$shock_id, $upgrade_id, $note]);
-                            logAudit('shock_upgrades_mapping', $oeNum, 'CREATE', null, ['shock_id' => $shock_id, 'upgrade_id' => $upgrade_id, 'note' => $note], $pdo);
-                        } else {
-                            $accErrors[] = "Upgrade PN: '$part_number'";
-                        }
-                    }
-                }
+                $accErrors = array_merge($accErrors, $decalErrs, $toolErrs, $upgradeErrs);
             }
         }
     } catch (PDOException $e) {
