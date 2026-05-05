@@ -96,7 +96,7 @@ if (file_exists($dbFile)) {
         </div>
 
         <div class="grid">
-            <a href="draft_lookup.php" class="nav-card">
+            <a href="lookup.php" class="nav-card">
                 <span>🔍 SHOCK LOOKUP</span>
                 <small>Search specs & BOMs</small>
             </a>

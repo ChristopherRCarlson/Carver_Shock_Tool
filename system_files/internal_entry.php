@@ -91,7 +91,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ':nitrogen_psi' => clean_input($_POST['nitrogen_psi'] ?? ''),
                 ':shaft' => clean_input($_POST['shaft'] ?? ''),
                 ':seal_head' => clean_input($_POST['seal_head'] ?? ''),
-                ':bo_bumper' => clean_input($_POST['bo_bumper'] ?? ''),
+                ':bo_bumper_1' => clean_input($_POST['bo_bumper_1'] ?? ''),
+                ':bo_bumper_2' => clean_input($_POST['bo_bumper_2'] ?? ''),
+                ':bo_bumper_3' => clean_input($_POST['bo_bumper_3'] ?? ''),
                 ':body' => clean_input($_POST['body'] ?? ''),
                 ':inner_body' => clean_input($_POST['inner_body'] ?? ''),
                 ':body_cap' => clean_input($_POST['body_cap'] ?? ''),
@@ -127,8 +129,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $updateQuery = "UPDATE shocks SET
                     Brand = :brand, shock_pn = :shock_pn, product_use = :product_use, location = :location, rebuild_kit = :rebuild_kit,
                     service_kit = :service_kit, ifp_depth = :ifp_depth, nitrogen_psi = :nitrogen_psi, shaft = :shaft,
-                    seal_head = :seal_head, bo_bumper = :bo_bumper, body = :body, inner_body = :inner_body,
-                    body_cap = :body_cap, bearing_cap = :bearing_cap, reservoir = :reservoir, res_end_cap = :res_end_cap,
+                    seal_head = :seal_head, bo_bumper_1 = :bo_bumper_1, bo_bumper_2 = :bo_bumper_2, bo_bumper_3 = :bo_bumper_3, body = :body,
+                    inner_body = :inner_body, body_cap = :body_cap, bearing_cap = :bearing_cap, reservoir = :reservoir, res_end_cap = :res_end_cap,
                     metering_rod = :metering_rod, rebound_adjuster = :rebound_adjuster, comp_adjuster = :comp_adjuster,
                     comp_adjuster_knob = :comp_adjuster_knob, comp_adjuster_screw = :comp_adjuster_screw, hose = :hose,
                     res_clamp = :res_clamp, bypass_screws = :bypass_screws, body_bearing = :body_bearing, body_oring = :body_oring,
@@ -147,14 +149,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // INSERT NEW SHOCK
                 $insertQuery = "INSERT INTO shocks (
                     oe_pn, shock_pn, Brand, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
-                    shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
+                    shaft, seal_head, bo_bumper_1, bo_bumper_2, bo_bumper_3, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
                     metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose,
                     res_clamp, bypass_screws, body_bearing, body_oring, body_reducer, body_spacer, body_inner_sleeve,
                     body_outer_sleeve, shaft_eyelet, shaft_bearing, shaft_oring, shaft_reducer, shaft_spacer,
                     shaft_inner_sleeve, shaft_outer_sleeve
                 ) VALUES (
                     :oe_pn, :shock_pn, :brand, :product_use, :location, :rebuild_kit, :service_kit, :ifp_depth, :nitrogen_psi,
-                    :shaft, :seal_head, :bo_bumper, :body, :inner_body, :body_cap, :bearing_cap, :reservoir, :res_end_cap,
+                    :shaft, :seal_head, :bo_bumper_1, :bo_bumper_2, :bo_bumper_3, :body, :inner_body, :body_cap, :bearing_cap, :reservoir, :res_end_cap,
                     :metering_rod, :rebound_adjuster, :comp_adjuster, :comp_adjuster_knob, :comp_adjuster_screw, :hose,
                     :res_clamp, :bypass_screws, :body_bearing, :body_oring, :body_reducer, :body_spacer, :body_inner_sleeve,
                     :body_outer_sleeve, :shaft_eyelet, :shaft_bearing, :shaft_oring, :shaft_reducer, :shaft_spacer,
@@ -403,7 +405,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="grid">
                     <div class="form-group"><label for="shaft">Shaft</label><input type="text" name="shaft" id="shaft"></div>
                     <div class="form-group"><label for="seal_head">Seal Head - Bearing Assembly</label><input type="text" name="seal_head" id="seal_head"></div>
-                    <div class="form-group"><label for="bo_bumper">BO Bumper</label><input type="text" name="bo_bumper" id="bo_bumper"></div>
+                    <div class="form-group"><label for="bo_bumper_1">BO Bumper 1</label><input type="text" name="bo_bumper_1" id="bo_bumper_1"></div>
+                    <div class="form-group"><label for="bo_bumper_2">BO Bumper 2</label><input type="text" name="bo_bumper_2" id="bo_bumper_2"></div>
+                    <div class="form-group"><label for="bo_bumper_3">BO Bumper 3</label><input type="text" name="bo_bumper_3" id="bo_bumper_3"></div>
                     <div class="form-group"><label for="body">Body</label><input type="text" name="body" id="body"></div>
                     <div class="form-group"><label for="inner_body">Inner Body</label><input type="text" name="inner_body" id="inner_body"></div>
                     <div class="form-group"><label for="body_cap">Body Cap</label><input type="text" name="body_cap" id="body_cap"></div>

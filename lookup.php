@@ -1,5 +1,5 @@
 <?php
-// draft_lookup.php - Schema v4.0 (SQLite Optimized with 38-Column Array Mapping)
+// lookup.php - Schema v4.1 (SQLite Optimized with 42-Column Array Mapping)
 
 $dbFile = 'system_files/carver_database.sqlite';
 
@@ -34,7 +34,7 @@ if ($search) {
 
         $query = "SELECT
                     oe_pn, shock_pn, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
-                    shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
+                    shaft, seal_head, bo_bumper_1, bo_bumper_2, bo_bumper_3, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
                     metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose, res_clamp, bypass_screws, body_bearing, body_oring,
                     body_reducer, body_spacer, body_inner_sleeve, body_outer_sleeve, shaft_eyelet, shaft_bearing,
                     shaft_oring, shaft_reducer, shaft_spacer, shaft_inner_sleeve, shaft_outer_sleeve, Brand, id
@@ -65,7 +65,7 @@ if ($search) {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="format-detection" content="telephone=no, date=no, address=no">
-        <title>Carver Shock Lookup Tool - V4.0</title>
+        <title>Carver Shock Lookup Tool - v4.1</title>
         <style>
             body { font-family: sans-serif; margin: 0; background-color: #f9f9f9; }
             .container { max-width: 800px; margin: 20px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
@@ -167,12 +167,20 @@ if ($search) {
             function logError(sku, type, reason) {
                 const debugBox = document.getElementById('debug-logger');
                 const logText = document.getElementById('debug-log-text');
+
+                // If the debug UI is commented out or missing, just log to console and exit safely
+                if (!debugBox || !logText) {
+                    console.warn(`[CARVER DIAGNOSTIC] ERROR [${type}]: SKU "${sku}" - ${reason}`);
+                    return;
+                }
+
                 if (debugBox.style.display === 'none') {
                     debugBox.style.display = 'block';
                     logText.value += "=== CARVER TOOL DIAGNOSTIC LOG ===\n";
                     logText.value += "Time: " + new Date().toLocaleTimeString() + "\n";
                     logText.value += "-----------------------------------\n";
                 }
+
                 const time = new Date().toISOString().split('T')[1].split('.')[0];
                 logText.value += `[${time}] ERROR [${type}]: SKU "${sku}" - ${reason}\n`;
                 logText.scrollTop = logText.scrollHeight;
@@ -301,7 +309,7 @@ if ($search) {
             <?php if (!empty($results)) : ?>
                 <?php foreach ($results as $row) : ?>
                     <?php
-                        $shock_id = $row[39]; // Extract the DB id
+                        $shock_id = $row[41]; // Extract the DB id
 
                         // Fetch Decals
                         $stmtDecals = $pdo->prepare("SELECT d.part_number, d.description, m.placement_note FROM decals d JOIN shock_decals_mapping m ON d.id = m.decal_id WHERE m.shock_id = ?");
@@ -331,8 +339,9 @@ if ($search) {
                                 <div style="margin-top:5px; font-style: italic; color: #000;">
                                     <?php
                                     $desc_parts = [];
-                                    if (trim($row[38] ?? '')) {
-                                        $desc_parts[] = "Brand: " . trim($row[38] ?? '');
+                                    // Brand shifted from 38 to 40
+                                    if (trim($row[40] ?? '')) {
+                                        $desc_parts[] = "Brand: " . trim($row[40] ?? '');
                                     }
                                     if (trim($row[2] ?? '')) {
                                         $desc_parts[] = "Use: " . trim($row[2] ?? '');
@@ -376,50 +385,61 @@ if ($search) {
                         <div class="spec-grid">
                             <div class="spec-item"><span class="spec-label">Shaft</span><span class="spec-value"><?= display_linked_part($row[8]) ?></span></div>
                             <div class="spec-item"><span class="spec-label">Seal Head</span><span class="spec-value"><?= display_linked_part($row[9]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">BO Bumper</span><span class="spec-value"><?= display_linked_part($row[10]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_linked_part($row[11]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Inner Body</span><span class="spec-value"><?= display_linked_part($row[12]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Body Cap</span><span class="spec-value"><?= display_linked_part($row[13]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Bearing Cap</span><span class="spec-value"><?= display_linked_part($row[14]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Metering Rod</span><span class="spec-value"><?= display_linked_part($row[17]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Rebound Adjuster</span><span class="spec-value"><?= display_linked_part($row[18]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Compression Adjuster</span><span class="spec-value"><?= display_linked_part($row[19]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Comp. Adj. Knob</span><span class="spec-value"><?= display_linked_part($row[20]) ?></span></div>
-                            <div class="spec-item"><span class="spec-label">Comp. Adj. Screw</span><span class="spec-value"><?= display_linked_part($row[21]) ?></span></div>
+                            <div class="spec-item">
+                                <span class="spec-label">BO Bumpers</span>
+                                <span class="spec-value">
+                                    <?= display_linked_part($row[10]) ?>
+                                    <?php if (!empty(trim($row[11] ?? ''))) :
+                                        ?><br><?= display_linked_part($row[11]) ?><?php
+                                    endif; ?>
+                                    <?php if (!empty(trim($row[12] ?? ''))) :
+                                        ?><br><?= display_linked_part($row[12]) ?><?php
+                                    endif; ?>
+                                </span>
+                            </div>
+                            <div class="spec-item"><span class="spec-label">Body</span><span class="spec-value"><?= display_linked_part($row[13]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Inner Body</span><span class="spec-value"><?= display_linked_part($row[14]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Body Cap</span><span class="spec-value"><?= display_linked_part($row[15]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Bearing Cap</span><span class="spec-value"><?= display_linked_part($row[16]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Metering Rod</span><span class="spec-value"><?= display_linked_part($row[19]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Rebound Adjuster</span><span class="spec-value"><?= display_linked_part($row[20]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Compression Adjuster</span><span class="spec-value"><?= display_linked_part($row[21]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Comp. Adj. Knob</span><span class="spec-value"><?= display_linked_part($row[22]) ?></span></div>
+                            <div class="spec-item"><span class="spec-label">Comp. Adj. Screw</span><span class="spec-value"><?= display_linked_part($row[23]) ?></span></div>
 
                             <div class="mounting-box">
                                 <span class="section-title">Reservoir Assembly</span>
                                 <div class="sleeve-pair">
-                                    <div style="flex:1"><span class="spec-label">Reservoir</span><?= display_linked_part($row[15]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">End Cap</span><?= display_linked_part($row[16]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Hose</span><?= display_linked_part($row[22]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Clamp</span><?= display_linked_part($row[23]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Bypass Screws</span><?= display_linked_part($row[24]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Reservoir</span><?= display_linked_part($row[17]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">End Cap</span><?= display_linked_part($row[18]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Hose</span><?= display_linked_part($row[24]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Clamp</span><?= display_linked_part($row[25]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Bypass Screws</span><?= display_linked_part($row[26]) ?></div>
                                 </div>
                             </div>
 
                             <div class="mounting-box">
                                 <span class="section-title">Body End Mounting</span>
                                 <div class="sleeve-pair">
-                                    <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[25]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[26]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[27]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[28]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[29]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[30]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[27]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[28]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[29]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[30]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[31]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[32]) ?></div>
                                 </div>
                             </div>
 
                             <div class="mounting-box">
                                 <span class="section-title">Shaft - Eyelet End Mounting</span>
                                 <div class="sleeve-pair">
-                                    <div style="flex:1"><span class="spec-label">Eyelet</span><?= display_linked_part($row[31]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[32]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[33]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[34]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[35]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[36]) ?></div>
-                                    <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[37]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Eyelet</span><?= display_linked_part($row[33]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Bearing</span><?= display_linked_part($row[34]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">O-Ring</span><?= display_linked_part($row[35]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Reducer</span><?= display_linked_part($row[36]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Spacer</span><?= display_linked_part($row[37]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Inner Sleeve</span><?= display_linked_part($row[38]) ?></div>
+                                    <div style="flex:1"><span class="spec-label">Outer Sleeve</span><?= display_linked_part($row[39]) ?></div>
                                 </div>
                             </div>
                         </div>
