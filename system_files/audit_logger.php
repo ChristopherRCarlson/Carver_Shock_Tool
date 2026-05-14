@@ -2,13 +2,11 @@
 
 // system_files/audit_logger.php
 
-// THE FIX: Added $pdo = null to the end of the function arguments
 function logAudit(string $tableName, int|string $recordId, string $action, ?array $oldData = null, ?array $newData = null, ?PDO $pdo = null): void
 {
     $dbFile = __DIR__ . '/carver_database.sqlite';
 
     try {
-        // THE FIX: If a connection was passed in, use it. Otherwise, make a new one.
         if ($pdo === null) {
             $pdo = new PDO('sqlite:' . $dbFile);
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -22,6 +20,15 @@ function logAudit(string $tableName, int|string $recordId, string $action, ?arra
 
         $changedBy = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
 
+        // Symmetrical ID Capture: If this is an INSERT/CREATE action and the auto-increment ID is missing from newData, fetch it dynamically
+        if (($action === 'CREATE' || $action === 'INSERT') && is_array($newData) && !isset($newData['id'])) {
+            $lastId = $pdo->lastInsertId();
+            if ($lastId) {
+                // Prepend 'id' so it perfectly mirrors the visual structure of old_data during DELETE operations
+                $newData = ['id' => $lastId] + $newData;
+            }
+        }
+
         // Convert the arrays directly to JSON strings to preserve the column names
         $oldDataStr = $oldData ? json_encode($oldData) : null;
         $newDataStr = $newData ? json_encode($newData) : null;
@@ -34,6 +41,7 @@ function logAudit(string $tableName, int|string $recordId, string $action, ?arra
             $logId, $tableName, $recordId, $action, $oldDataStr, $newDataStr, $changedBy, $timestamp
         ]);
     } catch (PDOException $e) {
+        // Silently handle audit log failure to avoid disrupting main workflow
         error_log("Audit Log Error: " . $e->getMessage());
     }
 }

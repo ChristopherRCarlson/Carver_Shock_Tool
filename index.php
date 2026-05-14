@@ -101,13 +101,14 @@ if (file_exists($dbFile)) {
                 <small>Search specs & BOMs</small>
             </a>
 
-            <a href="cross_reference.php" class="nav-card">
-                <span>🔗 PART CROSS-REF</span>
-                <small>Find compatible shocks</small>
-
             <a href="system_files/internal_entry.php" class="nav-card">
                 <span>📥 DATA ENTRY</span>
                 <small>Add/Update shock information</small>
+            </a>
+
+            <a href="cross_reference.php" class="nav-card">
+                <span>🔗 PART CROSS-REF</span>
+                <small>Find compatible shocks</small>
             </a>
 
             <a href="system_files/accessory_manager.php" class="nav-card">
