@@ -96,7 +96,7 @@ if (file_exists($dbFile)) {
         </div>
 
         <div class="grid">
-            <a href="draft_lookup.php" class="nav-card">
+            <a href="lookup.php" class="nav-card">
                 <span>🔍 SHOCK LOOKUP</span>
                 <small>Search specs & BOMs</small>
             </a>
@@ -104,6 +104,11 @@ if (file_exists($dbFile)) {
             <a href="system_files/internal_entry.php" class="nav-card">
                 <span>📥 DATA ENTRY</span>
                 <small>Add/Update shock information</small>
+            </a>
+
+            <a href="cross_reference.php" class="nav-card">
+                <span>🔗 PART CROSS-REF</span>
+                <small>Find compatible shocks</small>
             </a>
 
             <a href="system_files/accessory_manager.php" class="nav-card">

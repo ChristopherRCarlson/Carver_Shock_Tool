@@ -47,11 +47,89 @@ if (!empty($oe_pn)) {
         $stmt->execute([':oe_pn' => $oe_pn]);
 
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            // Decode the JSON strings back into PHP arrays so the HTML loop can read them
-            $row['old_data'] = $row['old_data'] ? json_decode($row['old_data'], true) : [];
-            $row['new_data'] = $row['new_data'] ? json_decode($row['new_data'], true) : [];
+            // Decode the JSON strings back into PHP arrays
+            $oldRaw = $row['old_data'] ? json_decode($row['old_data'], true) : [];
+            $newRaw = $row['new_data'] ? json_decode($row['new_data'], true) : [];
+
+            $cleanOld = [];
+            $cleanNew = [];
+
+            // 1. Strip PDO colons from Old Data
+            if (is_array($oldRaw)) {
+                foreach ($oldRaw as $k => $v) {
+                    $cleanOld[ltrim($k, ':')] = $v;
+                }
+            }
+
+            // 2. Strip PDO colons from New Data
+            if (is_array($newRaw)) {
+                foreach ($newRaw as $k => $v) {
+                    $cleanNew[ltrim($k, ':')] = $v;
+                }
+            }
+
+            // 3. Symmetrical ID Fix: Carry the ID over during updates so it doesn't show as "deleted"
+            if ($row['action'] === 'UPDATE' && isset($cleanOld['id']) && !isset($cleanNew['id'])) {
+                $cleanNew['id'] = $cleanOld['id'];
+            }
+
+            // Reassign the perfectly aligned arrays back to the row
+            $row['old_data'] = $cleanOld;
+            $row['new_data'] = $cleanNew;
             $logs[] = $row;
         }
+
+        // --- PHANTOM MAPPING UPDATE FILTER ---
+        // Suppress paired redundant DELETE and CREATE actions where accessory values are unchanged.
+        $phantomCreates = [];
+        $suppressedIndices = [];
+
+        // Pass 1: Index mapping CREATE/INSERT actions by timestamp window and accessory fingerprint
+        foreach ($logs as $index => $log) {
+            if (str_contains($log['table_name'], '_mapping') && ($log['action'] === 'CREATE' || $log['action'] === 'INSERT')) {
+                // Group by Year-Month-Day Hour:Minute to catch concurrent script operations
+                $timeWindow = substr($log['timestamp'], 0, 16);
+                $data = $log['new_data']; // Use the array already decoded by the while loop above
+
+                if (is_array($data)) {
+                    unset($data['id'], $data['shock_oe']); // Strip internal IDs and constant OE string
+                    ksort($data); // Ensure consistent key order for accurate fingerprinting
+                    $fingerprint = json_encode($data);
+                    $phantomCreates[$log['table_name']][$timeWindow][$fingerprint][] = $index;
+                }
+            }
+        }
+
+        // Pass 2: Identify matching DELETE actions and mark both pairs for suppression
+        foreach ($logs as $index => $log) {
+            if (str_contains($log['table_name'], '_mapping') && $log['action'] === 'DELETE') {
+                $timeWindow = substr($log['timestamp'], 0, 16);
+                $data = $log['old_data']; // Use pre-decoded array
+
+                if (is_array($data)) {
+                    unset($data['id'], $data['shock_oe']);
+                    ksort($data);
+                    $fingerprint = json_encode($data);
+
+                    // If a corresponding CREATE/INSERT shares the exact same accessory fingerprint, suppress both
+                    if (!empty($phantomCreates[$log['table_name']][$timeWindow][$fingerprint])) {
+                        $createIndex = array_pop($phantomCreates[$log['table_name']][$timeWindow][$fingerprint]);
+                        $suppressedIndices[$index] = true;      // Suppress redundant DELETE
+                        $suppressedIndices[$createIndex] = true; // Suppress redundant CREATE
+                    }
+                }
+            }
+        }
+
+        // Pass 3: Rebuild the clean logs array directly into $logs
+        $cleanLogs = [];
+        foreach ($logs as $index => $log) {
+            if (!isset($suppressedIndices[$index])) {
+                $cleanLogs[] = $log;
+            }
+        }
+        $logs = $cleanLogs;
+        // --- END PHANTOM FILTER ---
     } catch (PDOException $e) {
         $error = "Database Error: " . $e->getMessage();
     }

@@ -91,7 +91,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ':nitrogen_psi' => clean_input($_POST['nitrogen_psi'] ?? ''),
                 ':shaft' => clean_input($_POST['shaft'] ?? ''),
                 ':seal_head' => clean_input($_POST['seal_head'] ?? ''),
-                ':bo_bumper' => clean_input($_POST['bo_bumper'] ?? ''),
+                ':bo_bumper_1' => clean_input($_POST['bo_bumper_1'] ?? ''),
+                ':bo_bumper_2' => clean_input($_POST['bo_bumper_2'] ?? ''),
+                ':bo_bumper_3' => clean_input($_POST['bo_bumper_3'] ?? ''),
                 ':body' => clean_input($_POST['body'] ?? ''),
                 ':inner_body' => clean_input($_POST['inner_body'] ?? ''),
                 ':body_cap' => clean_input($_POST['body_cap'] ?? ''),
@@ -127,8 +129,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $updateQuery = "UPDATE shocks SET
                     Brand = :brand, shock_pn = :shock_pn, product_use = :product_use, location = :location, rebuild_kit = :rebuild_kit,
                     service_kit = :service_kit, ifp_depth = :ifp_depth, nitrogen_psi = :nitrogen_psi, shaft = :shaft,
-                    seal_head = :seal_head, bo_bumper = :bo_bumper, body = :body, inner_body = :inner_body,
-                    body_cap = :body_cap, bearing_cap = :bearing_cap, reservoir = :reservoir, res_end_cap = :res_end_cap,
+                    seal_head = :seal_head, bo_bumper_1 = :bo_bumper_1, bo_bumper_2 = :bo_bumper_2, bo_bumper_3 = :bo_bumper_3, body = :body,
+                    inner_body = :inner_body, body_cap = :body_cap, bearing_cap = :bearing_cap, reservoir = :reservoir, res_end_cap = :res_end_cap,
                     metering_rod = :metering_rod, rebound_adjuster = :rebound_adjuster, comp_adjuster = :comp_adjuster,
                     comp_adjuster_knob = :comp_adjuster_knob, comp_adjuster_screw = :comp_adjuster_screw, hose = :hose,
                     res_clamp = :res_clamp, bypass_screws = :bypass_screws, body_bearing = :body_bearing, body_oring = :body_oring,
@@ -147,14 +149,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // INSERT NEW SHOCK
                 $insertQuery = "INSERT INTO shocks (
                     oe_pn, shock_pn, Brand, product_use, location, rebuild_kit, service_kit, ifp_depth, nitrogen_psi,
-                    shaft, seal_head, bo_bumper, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
+                    shaft, seal_head, bo_bumper_1, bo_bumper_2, bo_bumper_3, body, inner_body, body_cap, bearing_cap, reservoir, res_end_cap,
                     metering_rod, rebound_adjuster, comp_adjuster, comp_adjuster_knob, comp_adjuster_screw, hose,
                     res_clamp, bypass_screws, body_bearing, body_oring, body_reducer, body_spacer, body_inner_sleeve,
                     body_outer_sleeve, shaft_eyelet, shaft_bearing, shaft_oring, shaft_reducer, shaft_spacer,
                     shaft_inner_sleeve, shaft_outer_sleeve
                 ) VALUES (
                     :oe_pn, :shock_pn, :brand, :product_use, :location, :rebuild_kit, :service_kit, :ifp_depth, :nitrogen_psi,
-                    :shaft, :seal_head, :bo_bumper, :body, :inner_body, :body_cap, :bearing_cap, :reservoir, :res_end_cap,
+                    :shaft, :seal_head, :bo_bumper_1, :bo_bumper_2, :bo_bumper_3, :body, :inner_body, :body_cap, :bearing_cap, :reservoir, :res_end_cap,
                     :metering_rod, :rebound_adjuster, :comp_adjuster, :comp_adjuster_knob, :comp_adjuster_screw, :hose,
                     :res_clamp, :bypass_screws, :body_bearing, :body_oring, :body_reducer, :body_spacer, :body_inner_sleeve,
                     :body_outer_sleeve, :shaft_eyelet, :shaft_bearing, :shaft_oring, :shaft_reducer, :shaft_spacer,
@@ -403,7 +405,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="grid">
                     <div class="form-group"><label for="shaft">Shaft</label><input type="text" name="shaft" id="shaft"></div>
                     <div class="form-group"><label for="seal_head">Seal Head - Bearing Assembly</label><input type="text" name="seal_head" id="seal_head"></div>
-                    <div class="form-group"><label for="bo_bumper">BO Bumper</label><input type="text" name="bo_bumper" id="bo_bumper"></div>
+                    <div class="form-group"><label for="bo_bumper_1">BO Bumper 1</label><input type="text" name="bo_bumper_1" id="bo_bumper_1"></div>
+                    <div class="form-group"><label for="bo_bumper_2">BO Bumper 2</label><input type="text" name="bo_bumper_2" id="bo_bumper_2"></div>
+                    <div class="form-group"><label for="bo_bumper_3">BO Bumper 3</label><input type="text" name="bo_bumper_3" id="bo_bumper_3"></div>
                     <div class="form-group"><label for="body">Body</label><input type="text" name="body" id="body"></div>
                     <div class="form-group"><label for="inner_body">Inner Body</label><input type="text" name="inner_body" id="inner_body"></div>
                     <div class="form-group"><label for="body_cap">Body Cap</label><input type="text" name="body_cap" id="body_cap"></div>
@@ -483,6 +487,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
 
         <script>
+
+            // LAYER 1: Intercept Enter key globally during the Capturing Phase
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    const target = event.target;
+
+                    // Allow Enter ONLY if focused inside a multi-line textarea or explicitly activating a button
+                    if (target.tagName !== 'TEXTAREA' && target.tagName !== 'BUTTON' && target.type !== 'submit') {
+                        event.preventDefault();  // Halt native form submission instantly
+                        event.stopPropagation(); // Stop the event from reaching downstream form logic
+
+                        // If focused inside any text input, cleanly force focus out to trigger its API validation logic
+                        if (target.tagName === 'INPUT' && target.type === 'text') {
+                            target.blur();
+                        }
+                    }
+                }
+            }, true); // <-- 'true' enables capturing phase execution
+
             // Milestone 5 Dynamic Inputs Logic (Upgraded with On-The-Fly Creation)
             function addAccessoryRow(containerId, prefix, idPlaceholder, notePlaceholder, presetId = '', presetNote = '') {
                 const container = document.getElementById(containerId + '-container');
@@ -501,6 +524,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     // Don't run the API check if the box is blank or hasn't changed
                     if (pn === '' || pn === presetId) return;
 
+                    // Cache current state immediately to prevent race conditions during API checks
+                    const previousPreset = presetId;
+                    presetId = pn;
+
                     // Visually indicate to the user that we are checking the database
                     this.style.backgroundColor = '#f0f8ff';
 
@@ -516,52 +543,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 idInput.style.backgroundColor = ''; // Reset color
 
                                 if (data.exists === false) {
-                                    const capitalized = prefix.charAt(0).toUpperCase() + prefix.slice(1);
+                                    // Push model rendering to the back of the event queue to allow the input's blur event to fully complete and update the UI before any modals appear
+                                    setTimeout(() => {
+                                        const capitalized = prefix.charAt(0).toUpperCase() + prefix.slice(1);
 
-                                    if (confirm(`WARNING: The ${capitalized} '${pn}' does not exist in the master catalog. Would you like to create it now?`)) {
-                                        const desc = prompt(`Enter a description for ${capitalized} '${pn}':`);
-                                        if (desc !== null) {
-                                            let payload = { type: prefix, pn: pn, desc: desc };
-                                            if (prefix === 'tool') {
-                                                payload.tool_type = prompt(`Enter Tool Type for '${pn}' (e.g., Wrench, Socket):`, 'Standard') || 'Standard';
-                                            }
-
-                                            fetch('api_accessory.php', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify(payload)
-                                            })
-                                            .then(res => res.json())
-                                            .then(resData => {
-                                                if (resData.success) {
-                                                    presetId = pn; // Update preset so warning doesn't fire again
-                                                    idInput.style.backgroundColor = '#e8f5e9'; // Flash green
-                                                    setTimeout(() => idInput.style.backgroundColor = '', 1500);
-                                                } else {
-                                                    alert('Error creating accessory: ' + (resData.error || 'Unknown error'));
-                                                    idInput.value = '';
+                                        if (confirm(`WARNING: The ${capitalized} '${pn}' does not exist in the master catalog. Would you like to create it now?`)) {
+                                            const desc = prompt(`Enter a description for ${capitalized} '${pn}':`);
+                                            if (desc !== null) {
+                                                let payload = { type: prefix, pn: pn, desc: desc };
+                                                if (prefix === 'tool') {
+                                                    payload.tool_type = prompt(`Enter Tool Type for '${pn}' (e.g., Wrench, Socket):`, 'Standard') || 'Standard';
                                                 }
-                                            });
+
+                                                fetch('api_accessory.php', {
+                                                    method: 'POST',
+                                                    headers: { 'Content-Type': 'application/json' },
+                                                    body: JSON.stringify(payload)
+                                                })
+                                                .then(res => res.json())
+                                                .then(resData => {
+                                                    if (resData.success) {
+                                                        presetId = pn; // Update preset so warning doesn't fire again
+                                                        idInput.style.backgroundColor = '#e8f5e9'; // Flash green
+                                                        setTimeout(() => idInput.style.backgroundColor = '', 1500);
+                                                    } else {
+                                                        alert('Error creating accessory: ' + (resData.error || 'Unknown error'));
+                                                        presetId = previousPreset; // Revert preset to allow retry
+                                                        idInput.value = '';
+                                                    }
+                                                });
+                                            } else {
+                                                presetId = previousPreset;
+                                                idInput.value = ''; // Cancelled description
+                                            }
                                         } else {
-                                            idInput.value = ''; // Cancelled description
+                                            presetId = previousPreset;
+                                            idInput.value = ''; // Cancelled creation
                                         }
-                                    } else {
-                                        idInput.value = ''; // Cancelled creation
-                                    }
+                                    }, 10);
                                 } else if (data.error) {
-                                    alert("API Error: " + data.error);
+                                    setTimeout(() => alert("API Error: " + data.error), 10);
+                                    presetId = previousPreset;
                                     idInput.style.backgroundColor = '#ffebee';
                                 }
                             } catch (e) {
                                 // THIS CATCHES THE SILENT PHP ERRORS
                                 console.error("Raw API Response:", text);
-                                alert("API crashed! It returned HTML/Errors instead of JSON. Press F12 and check the Console to see the raw output from PHP.");
+                                setTimeout(() => alert("API crashed! It returned HTML/Errors instead of JSON."), 10);
+                                presetId = previousPreset;
                                 idInput.style.backgroundColor = '#ffebee';
                             }
                         })
                         .catch(error => {
                             console.error("Fetch failed:", error);
-                            alert("Could not connect to api_accessory.php. Check your internet or file paths!");
+                            setTimeout(() => alert("Could not connect to api_accessory.php."), 10);
+                            presetId = previousPreset;
                             idInput.style.backgroundColor = '#ffebee';
                         });
                 });
@@ -586,53 +622,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 // --- 1. AUTO-FILL API LOGIC ---
                 const oeInput = document.getElementById('oe_pn');
+                let lastCheckedOE = ''; // Track the last validated string to prevent redundant API calls on blur
 
                 if (oeInput) {
                     oeInput.addEventListener('blur', function() {
                         const oeValue = this.value.trim();
-                        if (oeValue === '') return;
+                        // Ignore empty string OR strings we just finished evaluating to prevent double API calls when the user clicks in and out of the OE box
+                        if (oeValue === '' || oeValue === lastCheckedOE) return;
+
+                        // Immediatly cache the value so immediate redudant blurs are stopped
+                        lastCheckedOE = oeValue;
 
                         fetch('api_check_duplicate.php?oe_pn=' + encodeURIComponent(oeValue))
                             .then(response => response.json())
                             .then(result => {
                                 // Look for 'isDuplicate' from the new SQLite API
                                 if (result.isDuplicate) {
-                                    if (confirm('OE ' + oeValue + ' already exists in the database! Would you like to load its data to update it?')) {
+                                    // Decouple native UI modal execution from the blur event thread
+                                    setTimeout(() => {
+                                        if (confirm('OE ' + oeValue + ' already exists in the database! Would you like to load its data to update it?')) {
 
-                                        // Tell it to specifically use the associative data array we built in the API
-                                        const shockData = result.assoc_data || result;
+                                            // Tell it to specifically use the associative data array we built in the API
+                                            const shockData = result.assoc_data || result;
 
-                                        for (const [key, value] of Object.entries(shockData)) {
+                                            for (const [key, value] of Object.entries(shockData)) {
 
-                                            // FIX 3: Handle the Dynamic Accessory Arrays
-                                            if (Array.isArray(value) && (key === 'decals' || key === 'tools' || key === 'upgrades')) {
-                                                const container = document.getElementById(key + '-container');
-                                                if (container) {
-                                                    container.innerHTML = ''; // Clear the initial blank rows
-                                                    const prefix = key.slice(0, -1); // e.g., 'decals' becomes 'decal'
+                                                // FIX 3: Handle the Dynamic Accessory Arrays
+                                                if (Array.isArray(value) && (key === 'decals' || key === 'tools' || key === 'upgrades')) {
+                                                    const container = document.getElementById(key + '-container');
+                                                    if (container) {
+                                                        container.innerHTML = ''; // Clear the initial blank rows
+                                                        const prefix = key.slice(0, -1); // e.g., 'decals' becomes 'decal'
 
-                                                    // Build a row for every accessory assigned to the shock using the smart function
-                                                    value.forEach(acc => {
-                                                        const acc_pn = acc.part_number || '';
-                                                        const acc_note = acc.note || '';
+                                                        // Build a row for every accessory assigned to the shock using the smart function
+                                                        value.forEach(acc => {
+                                                            const acc_pn = acc.part_number || '';
+                                                            const acc_note = acc.note || '';
 
-                                                        // Pass the pre-filled values directly into the function
-                                                        addAccessoryRow(key, prefix, 'Part Number', 'Note', acc_pn, acc_note);
-                                                    });
+                                                            // Pass the pre-filled values directly into the function
+                                                            addAccessoryRow(key, prefix, 'Part Number', 'Note', acc_pn, acc_note);
+                                                        });
 
-                                                    // Add one blank row at the bottom in case they want to add more
-                                                    addAccessoryRow(key, prefix, prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' Part Number', 'Note');
+                                                        // Add one blank row at the bottom in case they want to add more
+                                                        addAccessoryRow(key, prefix, prefix.charAt(0).toUpperCase() + prefix.slice(1) + ' Part Number', 'Note');
+                                                    }
                                                 }
-                                            }
-                                            // Handle Standard Text Inputs
-                                            else {
-                                                const inputField = document.querySelector(`[name="${key}"]`) || document.querySelector(`[name="${key.toLowerCase()}"]`);
-                                                if (inputField && key !== 'oe_pn') {
-                                                    inputField.value = value || '';
+                                                // Handle Standard Text Inputs
+                                                else {
+                                                    const inputField = document.querySelector(`[name="${key}"]`) || document.querySelector(`[name="${key.toLowerCase()}"]`);
+                                                    if (inputField && key !== 'oe_pn') {
+                                                        inputField.value = value || '';
+                                                    }
                                                 }
                                             }
                                         }
-                                    }
+                                    }, 10);
                                 }
                             })
                         .catch(error => console.error('Error fetching OE data:', error));
@@ -644,6 +688,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 if (form) {
                     form.addEventListener('submit', function(event) {
+
+                        // LAYER 2 GUARD: If submission fires while the user's cursor is still actively editing a text box, block it
+                        if (document.activeElement && document.activeElement.tagName === 'INPUT' && document.activeElement.type === 'text') {
+                            event.preventDefault();
+                            document.activeElement.blur(); // Force validation check cleanly
+                            return;
+                        }
 
                         // MILESTONE 4: If the delete button was clicked, ignore the save validation!
                         if (event.submitter && event.submitter.value === 'delete') {
