@@ -39,41 +39,32 @@ if (!$sku || !preg_match('/^[a-zA-Z0-9\-\.\s_]+$/', $sku)) {
 
 // 2. Cache Setup
 $cacheDir = __DIR__ . '/cache';
-$cacheTtl = 7 * 24 * 3600; // 7 days
+date_default_timezone_set('America/Chicago');
+$midnight = strtotime('today midnight');
 if (!is_dir($cacheDir)) {
     @mkdir($cacheDir, 0755, true);
 }
 
-// 3. Probabilistic Cleanup
-if (function_exists('mt_rand') && mt_rand(1, 100) === 1) {
-    $maxDeletes = 50;
-    $deleted = 0;
-    $now = time();
-    $dh = @opendir($cacheDir);
-    if ($dh) {
-        while (($f = readdir($dh)) !== false) {
-            if ($deleted >= $maxDeletes) {
-                break;
-            }
-            if ($f === '.' || $f === '..') {
-                continue;
-            }
-            $path = $cacheDir . '/' . $f;
-            if (!is_file($path)) {
-                continue;
-            }
-            if (!preg_match('/\.(meta|img)$/', $f)) {
-                continue;
-            }
-            $mtime = @filemtime($path) ?: 0;
-            if ($now - $mtime > $cacheTtl) {
-                @unlink($path);
-                $deleted++;
-            }
+// ==========================================
+// PSEUDO-CRON DAILY CLEANUP
+// ==========================================
+$cronMarker = $cacheDir . '/last_clean.txt';
+$now = time();
+
+// If the marker doesn't exist, or it's been more than 24 hours (86400 seconds)
+if (!file_exists($cronMarker) || ($now - @filemtime($cronMarker)) > 86400) {
+    // 1. Instantly update the marker so other users don't trigger the cleanup at the same time
+    @file_put_contents($cronMarker, $now);
+
+    // 2. Find and delete files older than midnight
+    $files = glob($cacheDir . '/*');
+    foreach ($files as $file) {
+        if (is_file($file) && filemtime($file) < $midnight && basename($file) !== 'last_clean.txt') {
+            @unlink($file);
         }
-        closedir($dh);
     }
 }
+// ==========================================
 
 $cacheKey = sha1($sku);
 $metaFile = $cacheDir . '/' . $cacheKey . '.meta';
@@ -82,7 +73,7 @@ $imgFile = $cacheDir . '/' . $cacheKey . '.img';
 // ==========================================
 // CACHE CHECK (The "HIT" Phase)
 // ==========================================
-if (is_file($metaFile) && (time() - filemtime($metaFile) < $cacheTtl)) {
+if (is_file($metaFile) && (filemtime($metaFile)) >= $midnight) {
     $meta = json_decode(file_get_contents($metaFile), true);
 
     if ($meta) {
@@ -92,13 +83,15 @@ if (is_file($metaFile) && (time() - filemtime($metaFile) < $cacheTtl)) {
             send_404_image();
         }
 
-        // NEW: If we know the product exists but has no photo
-        if (isset($meta['content_type']) && $meta['content_type'] === 'redirect') {
+        // NEW: If we know the product exists but has no photo (DuckDuckGo Safe)
+        if (isset($meta['content_type']) && ($meta['content_type'] === 'redirect' || $meta['content_type'] === 'transparent_fallback')) {
             if ($isHead) {
                 http_response_code(200); // Keeps text links alive
                 exit;
             } else {
-                header("Location: https://placehold.co/150x150?text=No+Photo"); // Keeps image links alive
+                header("Content-Type: image/png");
+                http_response_code(200); // Keeps image links alive without triggering a frontend error
+                echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
                 exit;
             }
         }
@@ -144,6 +137,15 @@ curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
 curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
 $html = curl_exec($ch);
 
+// NEW: ANTI-CACHE POISONING (Rate Limit / Firewall Protection)
+$scrapeHttpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+if ($scrapeHttpCode === 429 || $scrapeHttpCode === 403 || $scrapeHttpCode >= 500 || $html === false) {
+    // The storefront firewall blocked us for scraping too fast!
+    // Abort immediately WITHOUT saving anything to the server cache.
+    http_response_code(503); // Send a temporary "busy" signal
+    exit;
+}
+
 // TRAP FOR NO RESULTS (This definitively proves the part DOES NOT exist)
 if (stripos($html, '0 products found') !== false || stripos($html, 'no products found') !== false) {
     $meta = [
@@ -180,7 +182,6 @@ if (!$isProductPage) {
         $isProductPage = true;
     }
 }
-curl_close($ch);
 
 $foundUrl = null;
 
@@ -239,7 +240,12 @@ if ($foundUrl) {
         curl_exec($ch_img);
         $httpCode = curl_getinfo($ch_img, CURLINFO_HTTP_CODE);
         $contentType = curl_getinfo($ch_img, CURLINFO_CONTENT_TYPE);
-        curl_close($ch_img);
+
+        // Anti-Poison: If the firewall blocks the IMAGE fetch, do not cache a failure!
+        if ($httpCode === 0 || $httpCode === 403 || $httpCode === 429 || $httpCode >= 500) {
+            http_response_code(503);
+            exit;
+        }
 
         $meta = [
             'exists' => ($httpCode >= 200 && $httpCode < 300) ? true : false,
@@ -248,15 +254,14 @@ if ($foundUrl) {
             'timestamp' => time()
         ];
 
-        // NEW: If the image link is broken but the product exists, override the failure!
         if (!$meta['exists']) {
             $meta['exists'] = true;
-            $meta['content_type'] = 'redirect';
+            $meta['content_type'] = 'transparent_fallback';
         }
 
         @file_put_contents($metaFile, json_encode($meta));
 
-        if ($meta['content_type'] === 'redirect') {
+        if ($meta['content_type'] === 'transparent_fallback') {
             http_response_code(200);
             exit;
         }
@@ -272,7 +277,12 @@ if ($foundUrl) {
         $imgData = curl_exec($ch_img);
         $contentType = curl_getinfo($ch_img, CURLINFO_CONTENT_TYPE);
         $httpCode = curl_getinfo($ch_img, CURLINFO_HTTP_CODE);
-        curl_close($ch_img);
+
+        // Anti-Poison: If the firewall blocks the IMAGE fetch, do not cache a failure!
+        if ($httpCode === 0 || $httpCode === 403 || $httpCode === 429 || $httpCode >= 500 || $imgData === false) {
+            http_response_code(503);
+            exit;
+        }
 
         if ($imgData && $httpCode >= 200 && $httpCode < 300) {
             @file_put_contents($imgFile, $imgData);
@@ -292,20 +302,22 @@ if ($foundUrl) {
     }
 }
 
-// NEW: IF WE REACH HERE, THE PRODUCT EXISTS BUT HAS NO IMAGE.
-// We cache a "redirect" state instead of sending a 404.
+// IF WE REACH HERE, THE PRODUCT EXISTS BUT HAS NO IMAGE.
+// We cache a local fallback state instead of a third-party tracking domain
 $meta = [
     'exists' => true,
-    'content_type' => 'redirect',
+    'content_type' => 'transparent_fallback',
     'content_length' => 0,
     'timestamp' => time()
 ];
 @file_put_contents($metaFile, json_encode($meta));
 
 if ($isHead) {
-    http_response_code(200); // Keeps Text Links active
+    http_response_code(200);
     exit;
 } else {
-    header("Location: https://placehold.co/150x150?text=No+Photo"); // Keeps Kit Images active
+    header("Content-Type: image/png");
+    http_response_code(200);
+    echo base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
     exit;
 }

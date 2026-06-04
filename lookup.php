@@ -196,7 +196,8 @@ if ($search) {
             function invalidateLink(element, partNum) {
                 const isNoSku = (!partNum || partNum.trim() === '-' || partNum.trim().toUpperCase() === 'N/A');
                 if (element.tagName === 'IMG') {
-                    element.src = "https://placehold.co/150x150?text=" + (isNoSku ? "No+SKU" : "No+Photo");
+                    const fallbackText = isNoSku ? "No SKU" : "No Photo";
+                    element.src = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23f4f4f4'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23888888'%3E" + encodeURIComponent(fallbackText) + "%3C/text%3E%3C/svg%3E";
                     element.style.cursor = "default";
                     element.onclick = null;
                     const linkContainer = element.nextElementSibling;
@@ -227,21 +228,40 @@ if ($search) {
                 if (activeRequests >= MAX_CONCURRENT || requestQueue.length === 0) return;
                 const { sku, element } = requestQueue.shift();
                 const freshCache = getCache();
+
                 if (freshCache[sku]) {
                     if (freshCache[sku].v === false) invalidateLink(element, sku);
                     else if (element.tagName === 'IMG' && element.dataset.src) element.src = element.dataset.src;
                     processQueue(); return;
                 }
+
                 activeRequests++;
                 fetch('https://carverperformance.com/get_image.php?sku=' + encodeURIComponent(sku), { method: 'HEAD' })
                     .then(response => {
-                        const isValid = response.ok;
-                        setCache(sku, isValid);
-                        if (!isValid) { logError(sku, "NOT FOUND", `HTTP ${response.status}`); invalidateLink(element, sku); }
-                        else if (element.tagName === 'IMG' && element.dataset.src) element.src = element.dataset.src;
+                        if (response.ok) {
+                            // HTTP 200: Part exists
+                            setCache(sku, true);
+                            if (element.tagName === 'IMG' && element.dataset.src) element.src = element.dataset.src;
+                        } else if (response.status === 404) {
+                            // HTTP 404: Part definitively does NOT exist
+                            setCache(sku, false);
+                            logError(sku, "NOT FOUND", `HTTP 404`);
+                            invalidateLink(element, sku);
+                        } else {
+                            // HTTP 503 / Firewall Rate Limit:
+                            // DO NOT cache a failure! Leave the link alive and clickable.
+                            logError(sku, "RATE LIMIT/SERVER BUSY", `HTTP ${response.status}`);
+                        }
                     })
-                    .catch((error) => logError(sku, "NETWORK FAILURE", error.message || "Connection Aborted"))
-                    .finally(() => { activeRequests--; processQueue(); });
+                    .catch((error) => {
+                        // Browser Shield / Network Block:
+                        // DO NOT cache a failure! Leave the link alive and clickable.
+                        logError(sku, "NETWORK FAILURE/BLOCKED", error.message || "Connection Aborted");
+                    })
+                    .finally(() => {
+                        activeRequests--;
+                        processQueue();
+                    });
             }
 
             function queueValidation(sku, element) {
@@ -363,10 +383,14 @@ if ($search) {
 
                         <?php
                             $rebuild_sku = trim($row[4] ?? '');
-                            $re_img = (!$rebuild_sku || $rebuild_sku === '-' || strtoupper($rebuild_sku) === 'N/A') ? "https://placehold.co/150x150/f4f4f4/888888?text=No+SKU" : "https://placehold.co/150x150/f4f4f4/888888?text=Loading...";
+                            $re_img = (!$rebuild_sku || $rebuild_sku === '-' || strtoupper($rebuild_sku) === 'N/A')
+                                ? "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23f4f4f4'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23888888'%3ENo SKU%3C/text%3E%3C/svg%3E"
+                                : "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23f4f4f4'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23888888'%3ELoading...%3C/text%3E%3C/svg%3E";
 
                             $service_sku = trim($row[5] ?? '');
-                            $se_img = (!$service_sku || $service_sku === '-' || strtoupper($service_sku) === 'N/A') ? "https://placehold.co/150x150/f4f4f4/888888?text=No+SKU" : "https://placehold.co/150x150/f4f4f4/888888?text=Loading...";
+                            $se_img = (!$service_sku || $service_sku === '-' || strtoupper($service_sku) === 'N/A')
+                                ? "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23f4f4f4'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23888888'%3ENo SKU%3C/text%3E%3C/svg%3E"
+                                : "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Crect width='150' height='150' fill='%23f4f4f4'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23888888'%3ELoading...%3C/text%3E%3C/svg%3E";
                         ?>
 
                         <div class="maintenance-section">
